@@ -98,12 +98,13 @@ export function AppFrame({ children }: { children: ReactNode }) {
 }
 
 function Brand() {
+  const { c } = useI18n();
   return (
     <div className="flex items-center gap-2 px-3 py-3">
       <div className="grid size-8 place-items-center rounded-md bg-[#1d6fe8] text-xs font-bold">SD</div>
       <div>
         <p className="text-sm font-semibold leading-tight">SnapDispatch</p>
-        <p className="text-[10px] text-[#8eabc9]">Powered by SnapBiz Data</p>
+        <p className="text-[10px] text-[#8eabc9]">{c.poweredBy}</p>
       </div>
     </div>
   );

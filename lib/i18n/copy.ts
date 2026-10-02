@@ -1,5 +1,6 @@
 const en = {
   language: "Language",
+  poweredBy: "Powered by SnapBiz Data",
   english: "English",
   spanish: "Español",
   opening: "Opening Westshore Drayage",
@@ -738,6 +739,7 @@ const en = {
 
 const es: typeof en = {
   language: "Idioma",
+  poweredBy: "Con tecnología de SnapBiz Data",
   english: "English",
   spanish: "Español",
   opening: "Abriendo Westshore Drayage",
