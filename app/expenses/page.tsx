@@ -7,24 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { driverReimbursementDue } from "@/lib/finance";
 import { money } from "@/lib/format";
-import { CATEGORY_LABEL, EXPENSE_STATUS_LABEL, PAID_BY_LABEL } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n";
+import { fill } from "@/lib/i18n/say";
 import { PITCH_LOAD_ID } from "@/lib/reference";
 import { useDemo } from "@/lib/store";
-import type { Expense } from "@/lib/types";
+import type { Expense, ExpenseStatus } from "@/lib/types";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
 export default function ExpensesPage() {
+  const { c } = useI18n();
   return (
-    <Suspense fallback={<p className="text-sm">Loading expenses…</p>}>
+    <Suspense fallback={<p className="text-sm">{c.loadingExpenses}</p>}>
       <ExpensesScreen />
     </Suspense>
   );
 }
 
 function ExpensesScreen() {
+  const { c, text } = useI18n();
+  const e = c.expenses;
   const demo = useDemo();
   const initial = useSearchParams().get("status") ?? "all";
   const [status, setStatus] = useState(initial);
@@ -39,16 +43,16 @@ function ExpensesScreen() {
   const open = demo.expenses.find((expense) => expense.id === openId);
   return (
     <div>
-      <PageHeader title="Expenses" description="Approval is separate from reimbursement. Company-paid receipts do not increase driver pay." />
+      <PageHeader title={e.title} description={e.description} />
       <div className="mb-3 w-52">
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {Object.entries(EXPENSE_STATUS_LABEL).map(([id, label]) => (
-              <SelectItem key={id} value={id}>{label}</SelectItem>
+            <SelectItem value="all">{e.all}</SelectItem>
+            {(Object.keys(c.expenseStatus) as ExpenseStatus[]).map((id) => (
+              <SelectItem key={id} value={id}>{c.expenseStatus[id]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -57,8 +61,8 @@ function ExpensesScreen() {
         <table className="w-full min-w-[980px] text-left text-sm">
           <thead className="bg-[#f8fafc] text-[11px] tracking-wide text-[#5c6b80] uppercase">
             <tr>
-              {["Date", "Load", "Driver", "Category", "Merchant", "Amount", "Paid by", "Approval", "Reimbursement", ""].map((label) => (
-                <th key={label} className="px-2 py-2 font-medium">{label}</th>
+              {[e.date, e.load, e.driver, e.category, e.merchant, e.amount, e.paidBy, e.approval, e.reimbursement, ""].map((label) => (
+                <th key={label || "actions"} className="px-2 py-2 font-medium">{label}</th>
               ))}
             </tr>
           </thead>
@@ -70,20 +74,20 @@ function ExpensesScreen() {
                   <td className="px-2 py-1.5">{expense.date}</td>
                   <td className="px-2 py-1.5">{expense.loadId ? <Link className="text-[#1d6fe8]" href={`/loads/${expense.loadId}`}>{expense.loadId}</Link> : "—"}</td>
                   <td className="px-2 py-1.5">{demo.drivers.find((driver) => driver.id === expense.driverId)?.name}</td>
-                  <td className="px-2 py-1.5">{CATEGORY_LABEL[expense.category]}</td>
+                  <td className="px-2 py-1.5">{c.category[expense.category]}</td>
                   <td className="px-2 py-1.5">{expense.merchant}</td>
                   <td className="px-2 py-1.5 tabular-nums">{money(expense.amount)}</td>
-                  <td className="px-2 py-1.5">{PAID_BY_LABEL[expense.paidBy]}</td>
-                  <td className="px-2 py-1.5"><TonePill tone={expense.status === "approved" ? "ok" : expense.status === "rejected" ? "late" : "warn"}>{EXPENSE_STATUS_LABEL[expense.status]}</TonePill></td>
-                  <td className="px-2 py-1.5">{reimbursementLabel(expense)}</td>
+                  <td className="px-2 py-1.5">{c.paidBy[expense.paidBy]}</td>
+                  <td className="px-2 py-1.5"><TonePill tone={expense.status === "approved" ? "ok" : expense.status === "rejected" ? "late" : "warn"}>{c.expenseStatus[expense.status]}</TonePill></td>
+                  <td className="px-2 py-1.5">{reimbursementLabel(expense, c)}</td>
                   <td className="px-2 py-1.5">
                     <div className="flex justify-end gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => setOpenId(expense.id)}>Receipt</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setOpenId(expense.id)}>{e.receipt}</Button>
                       {expense.status === "awaiting_approval" || expense.status === "correction_requested" ? (
                         <>
-                          <Button size="sm" onClick={() => review(demo.reviewExpense, expense.id, "approved")}>Approve</Button>
-                          <Button size="sm" variant="outline" onClick={() => setReasonFor({ id: expense.id, decision: "correction_requested" })}>Correct</Button>
-                          <Button size="sm" variant="outline" onClick={() => setReasonFor({ id: expense.id, decision: "rejected" })}>Reject</Button>
+                          <Button size="sm" onClick={() => review(demo.reviewExpense, expense.id, "approved", text, e.approvedToast)}>{e.approve}</Button>
+                          <Button size="sm" variant="outline" onClick={() => setReasonFor({ id: expense.id, decision: "correction_requested" })}>{e.correct}</Button>
+                          <Button size="sm" variant="outline" onClick={() => setReasonFor({ id: expense.id, decision: "rejected" })}>{e.reject}</Button>
                         </>
                       ) : null}
                     </div>
@@ -97,7 +101,8 @@ function ExpensesScreen() {
       {open ? (
         <div className="mt-3 rounded-lg border bg-white p-3">
           <p className="mb-2 text-sm font-medium">{open.merchant} · {money(open.amount)}</p>
-          {open.missingReceiptReason ? <p className="mb-2 text-sm text-amber-800">Missing receipt: {open.missingReceiptReason}</p> : null}
+          {open.notes ? <p className="mb-2 text-sm text-[#5c6b80]">{text(open.notes)}</p> : null}
+          {open.missingReceiptReason ? <p className="mb-2 text-sm text-amber-800">{fill(e.missing, { reason: text(open.missingReceiptReason) })}</p> : null}
           {open.attachmentIds.map((id) => {
             const doc = demo.documents.find((item) => item.id === id);
             return doc ? <DocumentPreview key={id} doc={doc} /> : null;
@@ -107,15 +112,15 @@ function ExpensesScreen() {
       <ReasonDialog
         open={Boolean(reasonFor)}
         onOpenChange={(next) => !next && setReasonFor(null)}
-        title={reasonFor?.decision === "rejected" ? "Reject expense" : "Request a correction"}
-        label="Reason"
-        confirm="Save"
+        title={reasonFor?.decision === "rejected" ? e.rejectTitle : e.correctTitle}
+        label={e.reason}
+        confirm={c.save}
         onConfirm={(reason) => {
           if (!reasonFor) return;
           const result = demo.reviewExpense(reasonFor.id, reasonFor.decision, reason);
-          if (!result.ok) toast.error(result.reason);
+          if (!result.ok) toast.error(text(result.reason));
           else {
-            toast.success(reasonFor.decision === "rejected" ? "Expense rejected" : "Correction requested");
+            toast.success(reasonFor.decision === "rejected" ? e.rejectedToast : e.correctionToast);
             setReasonFor(null);
           }
         }}
@@ -124,16 +129,23 @@ function ExpensesScreen() {
   );
 }
 
-function reimbursementLabel(expense: Expense) {
-  if (expense.paidBy !== "driver" || !expense.reimbursementRequested) return "Not owed";
-  if (expense.status === "rejected") return "Rejected";
-  if (expense.status === "approved" && driverReimbursementDue(expense)) return "Owed";
-  if (expense.status === "correction_requested") return "On hold";
-  return "Pending approval";
+function reimbursementLabel(expense: Expense, c: ReturnType<typeof useI18n>["c"]) {
+  const e = c.expenses;
+  if (expense.paidBy !== "driver" || !expense.reimbursementRequested) return e.notOwed;
+  if (expense.status === "rejected") return c.expenseStatus.rejected;
+  if (expense.status === "approved" && driverReimbursementDue(expense)) return e.owed;
+  if (expense.status === "correction_requested") return e.onHold;
+  return e.pendingApproval;
 }
 
-function review(action: (id: string, decision: "approved", note?: string) => { ok: boolean; reason?: string }, id: string, decision: "approved") {
+function review(
+  action: (id: string, decision: "approved", note?: string) => { ok: boolean; reason?: string },
+  id: string,
+  decision: "approved",
+  text: (value?: string) => string,
+  success: string,
+) {
   const result = action(id, decision);
-  if (!result.ok) toast.error(result.reason);
-  else toast.success("Expense approved");
+  if (!result.ok) toast.error(text(result.reason));
+  else toast.success(success);
 }

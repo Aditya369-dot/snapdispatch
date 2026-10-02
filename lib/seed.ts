@@ -2,6 +2,7 @@ import { ensureLedger, driverBalance } from "@/lib/finance";
 import { IMPORT_FLOW, EXPORT_FLOW } from "@/lib/flow";
 import { DEMO_NOW, addMinutes, iso, roundMoney } from "@/lib/format";
 import { FLAT_PAY } from "@/lib/reference";
+import { UNIT_STATS } from "@/lib/units";
 import type {
   Activity,
   DelayReason,
@@ -114,6 +115,10 @@ function truck(
     plate,
     vin: `1WS${unit.replace("-", "")}DEMO${year}`,
     staleLocation: stale,
+    asOf: UNIT_STATS[id].asOf,
+    periodStart: UNIT_STATS[id].periodStart,
+    periodMiles: UNIT_STATS[id].periodMiles,
+    gallons: UNIT_STATS[id].gallons,
   };
 }
 

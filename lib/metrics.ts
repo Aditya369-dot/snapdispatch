@@ -13,6 +13,9 @@ import {
   loadRevenue,
   revenueStamp,
 } from "@/lib/finance";
+import { fill } from "@/lib/i18n/say";
+import { copy, type Lang } from "@/lib/i18n/copy";
+import { phrase } from "@/lib/i18n/phrases";
 import { place } from "@/lib/reference";
 import type { DemoData, Driver, Load, Truck } from "@/lib/types";
 
@@ -140,7 +143,8 @@ export function delayTotals(data: DemoData) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }
 
-export function attentionItems(data: DemoData) {
+export function attentionItems(data: DemoData, lang: Lang = "en") {
+  const c = copy[lang].overview;
   const items: {
     id: string;
     tone: "late" | "warn" | "ok";
@@ -154,24 +158,30 @@ export function attentionItems(data: DemoData) {
       items.push({
         id: `oos-${truck.id}`,
         tone: "late",
-        title: `${truck.unit} is out of service`,
-        detail: data.issues.find((issue) => issue.truckId === truck.id && issue.status === "open")?.summary ?? "Open repair",
+        title: fill(c.oosTitle, { unit: truck.unit }),
+        detail: (() => {
+          const summary = data.issues.find((issue) => issue.truckId === truck.id && issue.status === "open")?.summary;
+          return summary ? phrase(lang, summary) : c.openRepair;
+        })(),
         href: `/trucks/${truck.id}`,
       });
     } else if (tone === "overdue") {
       items.push({
         id: `overdue-${truck.id}`,
         tone: "late",
-        title: `${truck.unit} service is overdue`,
-        detail: `Due ${truck.nextServiceDate} or ${truck.nextServiceMiles.toLocaleString()} mi`,
+        title: fill(c.overdueTitle, { unit: truck.unit }),
+        detail: fill(c.overdueDetail, {
+          date: truck.nextServiceDate,
+          miles: `${truck.nextServiceMiles.toLocaleString(lang === "es" ? "es-MX" : "en-US")} mi`,
+        }),
         href: `/trucks/${truck.id}`,
       });
     } else if (tone === "due_soon") {
       items.push({
         id: `soon-${truck.id}`,
         tone: "warn",
-        title: `${truck.unit} service is coming due`,
-        detail: `Next service ${truck.nextServiceDate}`,
+        title: fill(c.soonTitle, { unit: truck.unit }),
+        detail: fill(c.soonDetail, { date: truck.nextServiceDate }),
         href: `/trucks/${truck.id}`,
       });
     }
@@ -182,16 +192,16 @@ export function attentionItems(data: DemoData) {
         items.push({
           id: `lfd-${load.id}`,
           tone: "late",
-          title: `${load.containerNumber} last free day is today`,
-          detail: `${load.id} is still not picked up`,
+          title: fill(c.lfdToday, { container: load.containerNumber }),
+          detail: fill(c.lfdTodayDetail, { id: load.id }),
           href: `/loads/${load.id}`,
         });
       } else if (load.lastFreeDay === "2026-10-02") {
         items.push({
           id: `lfd-${load.id}`,
           tone: "warn",
-          title: `${load.containerNumber} last free day is tomorrow`,
-          detail: `${load.id} · pickup deadline approaching`,
+          title: fill(c.lfdTomorrow, { container: load.containerNumber }),
+          detail: fill(c.lfdTomorrowDetail, { id: load.id }),
           href: `/loads/${load.id}`,
         });
       }
@@ -200,8 +210,8 @@ export function attentionItems(data: DemoData) {
       items.push({
         id: `empty-${load.id}`,
         tone: "late",
-        title: `Empty return due · ${load.containerNumber}`,
-        detail: `${load.id} should be back at the terminal today`,
+        title: fill(c.emptyDue, { container: load.containerNumber }),
+        detail: fill(c.emptyDueDetail, { id: load.id }),
         href: `/loads/${load.id}`,
       });
     }
@@ -211,8 +221,8 @@ export function attentionItems(data: DemoData) {
         items.push({
           id: `pod-${load.id}`,
           tone: "warn",
-          title: `POD missing · ${load.containerNumber}`,
-          detail: pod?.reviewStatus === "rejected" ? "Blue document was rejected" : `${load.id} has no approved blue document`,
+          title: fill(c.podMissing, { container: load.containerNumber }),
+          detail: pod?.reviewStatus === "rejected" ? c.podRejected : fill(c.podNone, { id: load.id }),
           href: `/documents?load=${load.id}`,
         });
       }
@@ -224,8 +234,10 @@ export function attentionItems(data: DemoData) {
       items.push({
         id: `exp-${expense.id}`,
         tone: "warn",
-        title: `Receipt awaiting approval · ${expense.amount.toLocaleString("en-US", { style: "currency", currency: "USD" })}`,
-        detail: `${driver?.name ?? "Driver"} · ${expense.merchant}`,
+        title: fill(c.receiptTitle, {
+          amount: expense.amount.toLocaleString(lang === "es" ? "es-MX" : "en-US", { style: "currency", currency: "USD" }),
+        }),
+        detail: fill(c.receiptDetail, { driver: driver?.name ?? (lang === "es" ? "Operador" : "Driver"), merchant: expense.merchant }),
         href: `/expenses?status=awaiting_approval`,
       });
     }

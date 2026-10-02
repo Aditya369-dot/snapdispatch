@@ -1,4 +1,5 @@
-import { statusLabel } from "@/lib/flow";
+import { useI18n } from "@/lib/i18n";
+import { statusText } from "@/lib/i18n/say";
 import { cn } from "cn";
 import type { Load, LoadStatus } from "@/lib/types";
 
@@ -13,9 +14,10 @@ export function statusTone(status: LoadStatus) {
 }
 
 export function StatusBadge({ load, className }: { load: Pick<Load, "type" | "status">; className?: string }) {
+  const { lang } = useI18n();
   return (
     <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset", statusTone(load.status), className)}>
-      {statusLabel(load)}
+      {statusText(lang, load)}
     </span>
   );
 }

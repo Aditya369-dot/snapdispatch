@@ -1,12 +1,18 @@
 "use client";
 
 import { LoadDetail } from "@/components/load-detail";
+import { useI18n } from "@/lib/i18n";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+function LoadFallback() {
+  const { c } = useI18n();
+  return <p className="text-sm">{c.loadingLoad}</p>;
+}
+
 export default function LoadPage() {
   return (
-    <Suspense fallback={<p className="text-sm">Loading load…</p>}>
+    <Suspense fallback={<LoadFallback />}>
       <LoadRoute />
     </Suspense>
   );

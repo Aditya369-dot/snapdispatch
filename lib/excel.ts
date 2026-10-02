@@ -1,4 +1,5 @@
 import { CATEGORY_LABEL, PAID_BY_LABEL } from "@/lib/labels";
+import { unitCost } from "@/lib/units";
 import { maintenanceTone } from "@/lib/metrics";
 import { customer, place } from "@/lib/reference";
 import { statusLabel } from "@/lib/flow";
@@ -68,7 +69,9 @@ export function workbookRows(data: DemoData) {
       Reference: entry.reference ?? "",
       Memo: entry.memo,
     }));
-  const maintenance = data.trucks.map((truck) => ({
+  const maintenance = data.trucks.map((truck) => {
+    const cost = unitCost(truck.id, data.expenses, data.serviceRecords, data.issues);
+    return {
     Unit: truck.unit,
     "Make / model": `${truck.year} ${truck.make} ${truck.model}`,
     Driver: driverName(data, truck.driverId),
@@ -77,8 +80,13 @@ export function workbookRows(data: DemoData) {
     "Maintenance status": maintenanceTone(truck, data.thresholds),
     "Next service date": truck.nextServiceDate,
     "Next service miles": truck.nextServiceMiles,
+    "As of": truck.asOf,
+    Gallons: truck.gallons,
+    "Period miles": truck.periodMiles,
+    Expenses: cost.total,
     "Open issues": data.issues.filter((issue) => issue.truckId === truck.id && issue.status === "open").map((issue) => issue.summary).join("; "),
-  }));
+  };
+  });
   return { loads, drivers, expenses, payments, maintenance };
 }
 

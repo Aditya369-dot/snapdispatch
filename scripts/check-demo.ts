@@ -1,4 +1,5 @@
 import { driverBalance, driverReimbursementDue, loadFinancials, validateAssignment, windowsOverlap } from "../lib/finance";
+import { unitCost } from "../lib/units";
 import { maintenanceTone, overviewMetrics } from "../lib/metrics";
 import { PITCH_DRIVER_ID, PITCH_LOAD_ID, PITCH_TRUCK_ID } from "../lib/reference";
 import { TARGET_BALANCES, buildSeed } from "../lib/seed";
@@ -25,6 +26,16 @@ if (oos.length !== 1) problems.push(`oos ${oos.length}`);
 const tones = data.trucks.map((truck) => maintenanceTone(truck, data.thresholds));
 if (tones.filter((tone) => tone === "overdue").length !== 1) problems.push("overdue count");
 if (tones.filter((tone) => tone === "due_soon").length !== 1) problems.push("due soon count");
+
+for (const truck of data.trucks) {
+  if (!truck.asOf || !truck.periodStart) problems.push(`${truck.unit} missing as-of date`);
+  if (!(truck.gallons > 0)) problems.push(`${truck.unit} gallons`);
+  if (!(truck.periodMiles > 0)) problems.push(`${truck.unit} period miles`);
+  if (!(truck.odometer > truck.periodMiles)) problems.push(`${truck.unit} odometer`);
+  const cost = unitCost(truck.id, data.expenses, data.serviceRecords, data.issues);
+  if (!(cost.total > 0)) problems.push(`${truck.unit} expenses`);
+  if (truck.asOf < truck.periodStart) problems.push(`${truck.unit} period order`);
+}
 
 for (const driver of data.drivers) {
   const actual = driverBalance(data.ledger, driver.id);

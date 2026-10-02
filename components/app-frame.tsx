@@ -1,11 +1,14 @@
 "use client";
 
 import { DriverApp } from "@/components/driver-app";
+import { LanguageSwitch } from "@/components/language-switch";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DEMO_DAY, formatLongDate, money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
+import { fill } from "@/lib/i18n/say";
 import { COMPANY, PITCH_DRIVER_ID } from "@/lib/reference";
 import { useDemo, useHydrated } from "@/lib/store";
 import { WALK_STEPS, walkBalanceHint } from "@/lib/walkthrough";
@@ -29,20 +32,21 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 const NAV = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/dispatch", label: "Dispatch", icon: ClipboardList },
-  { href: "/loads", label: "Loads", icon: Container },
-  { href: "/fleet", label: "Fleet Map", icon: Map },
-  { href: "/drivers", label: "Drivers & Pay", icon: Users },
-  { href: "/expenses", label: "Expenses", icon: Receipt },
-  { href: "/trucks", label: "Trucks & Maintenance", icon: Truck },
-  { href: "/documents", label: "Documents", icon: FileText },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/excel", label: "Excel", icon: FileSpreadsheet },
-];
+  { href: "/", key: "overview", icon: LayoutDashboard },
+  { href: "/dispatch", key: "dispatch", icon: ClipboardList },
+  { href: "/loads", key: "loads", icon: Container },
+  { href: "/fleet", key: "fleet", icon: Map },
+  { href: "/drivers", key: "drivers", icon: Users },
+  { href: "/expenses", key: "expenses", icon: Receipt },
+  { href: "/trucks", key: "trucks", icon: Truck },
+  { href: "/documents", key: "documents", icon: FileText },
+  { href: "/reports", key: "reports", icon: BarChart3 },
+  { href: "/excel", key: "excel", icon: FileSpreadsheet },
+] as const;
 
 export function AppFrame({ children }: { children: ReactNode }) {
   const hydrated = useHydrated();
+  const { c } = useI18n();
   const view = useDemo((state) => state.view);
   const [menu, setMenu] = useState(false);
   if (!hydrated) {
@@ -50,7 +54,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
       <div className="grid min-h-dvh place-items-center bg-[#0c2340] text-white">
         <div className="text-center">
           <p className="text-lg font-semibold">SnapDispatch</p>
-          <p className="mt-1 text-sm text-[#c5d4e8]">Opening Westshore Drayage</p>
+          <p className="mt-1 text-sm text-[#c5d4e8]">{c.opening}</p>
         </div>
       </div>
     );
@@ -69,7 +73,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
           {view === "driver" ? (
             <div className="flex min-h-full justify-center px-2 py-3 lg:items-center lg:px-6">
               <div className="flex h-[calc(100dvh-4.5rem)] w-full max-w-[420px] flex-col overflow-hidden bg-white lg:h-[min(840px,calc(100dvh-6.5rem))] lg:rounded-[2rem] lg:border-[10px] lg:border-[#0c2340] lg:shadow-2xl">
-                <p className="hidden py-1 text-center text-[11px] text-[#5c6b80] lg:block">Driver phone preview</p>
+                <p className="hidden py-1 text-center text-[11px] text-[#5c6b80] lg:block">{c.phonePreview}</p>
                 <DriverApp />
               </div>
             </div>
@@ -81,7 +85,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
       <Sheet open={menu} onOpenChange={setMenu}>
         <SheetContent side="left" className="w-[240px] bg-[#0c2340] p-0 text-white sm:max-w-[240px]">
           <SheetHeader className="sr-only">
-            <SheetTitle>Menu</SheetTitle>
+            <SheetTitle>{c.menu}</SheetTitle>
           </SheetHeader>
           <Brand />
           <Nav onNavigate={() => setMenu(false)} />
@@ -94,12 +98,13 @@ export function AppFrame({ children }: { children: ReactNode }) {
 }
 
 function Brand() {
+  const { c } = useI18n();
   return (
     <div className="flex items-center gap-2 px-3 py-3">
       <div className="grid size-8 place-items-center rounded-md bg-[#1d6fe8] text-xs font-bold">SD</div>
       <div>
         <p className="text-sm font-semibold leading-tight">SnapDispatch</p>
-        <p className="text-[10px] text-[#8eabc9]">Powered by SnapBiz Data</p>
+        <p className="text-[10px] text-[#8eabc9]">{c.poweredBy}</p>
       </div>
     </div>
   );
@@ -107,6 +112,7 @@ function Brand() {
 
 function Nav({ onNavigate }: { onNavigate: () => void }) {
   const pathname = usePathname();
+  const { c } = useI18n();
   return (
     <nav className="flex flex-1 flex-col gap-0.5 px-2 pb-3">
       {NAV.map((item) => {
@@ -123,7 +129,7 @@ function Nav({ onNavigate }: { onNavigate: () => void }) {
             )}
           >
             <Icon className="size-4 shrink-0" />
-            {item.label}
+            {c.nav[item.key]}
           </Link>
         );
       })}
@@ -137,6 +143,7 @@ function Nav({ onNavigate }: { onNavigate: () => void }) {
 }
 
 function TopBar({ onMenu }: { onMenu: () => void }) {
+  const { c } = useI18n();
   const view = useDemo((state) => state.view);
   const actingDriverId = useDemo((state) => state.actingDriverId);
   const drivers = useDemo((state) => state.drivers);
@@ -152,7 +159,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
 
   return (
     <header className="flex flex-wrap items-center gap-2 border-b bg-white px-3 py-2">
-      <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenu} aria-label="Open menu">
+      <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenu} aria-label={c.openMenu}>
         <Menu />
       </Button>
       <div className="min-w-0">
@@ -160,28 +167,32 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
         <p className="text-[11px] text-[#5c6b80]">{formatLongDate(DEMO_DAY)}</p>
       </div>
       <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-900 ring-1 ring-amber-200 ring-inset">
-        Demo data
+        {c.demoData}
+      </span>
+      <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-900 ring-1 ring-sky-200 ring-inset">
+        {c.simulatedTracking}
       </span>
       <div className={cn("ml-auto flex flex-wrap items-center gap-2", highlight && "rounded-lg ring-2 ring-[#1d6fe8] ring-offset-2")} data-tour="demo-switcher">
+        <LanguageSwitch />
         <div className="flex rounded-lg bg-[#eef2f6] p-0.5">
           <button
             className={cn("rounded-md px-2.5 py-1 text-xs font-medium", view === "owner" ? "bg-white shadow-sm" : "text-[#5c6b80]")}
             onClick={() => setView("owner")}
           >
-            Owner
+            {c.owner}
           </button>
           <button
             className={cn("rounded-md px-2.5 py-1 text-xs font-medium", view === "driver" ? "bg-white shadow-sm" : "text-[#5c6b80]")}
             onClick={() => setView("driver", actingDriverId || PITCH_DRIVER_ID)}
           >
-            Driver
+            {c.driver}
           </button>
         </div>
         <Select
           value={actingDriverId}
           onValueChange={(driverId) => setView("driver", driverId)}
         >
-          <SelectTrigger className="h-8 w-[180px]" aria-label="Driver preview">
+          <SelectTrigger className="h-8 w-[180px]" aria-label={c.driverPreview}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -194,21 +205,21 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
         </Select>
       </div>
       <Button size="sm" variant="outline" onClick={() => setWalkOpen(true)}>
-        Start walkthrough
+        {c.startWalk}
       </Button>
       <Button size="sm" variant="outline" onClick={() => setResetOpen(true)}>
         <RotateCcw />
-        Reset demo
+        {c.resetDemo}
       </Button>
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset the demo?</DialogTitle>
+            <DialogTitle>{c.resetTitle}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#5c6b80]">This restores the original Westshore records in this browser, including assignments, receipts, and payments you’ve changed.</p>
+          <p className="text-sm text-[#5c6b80]">{c.resetBody}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setResetOpen(false)}>
-              Cancel
+              {c.cancel}
             </Button>
             <Button
               onClick={() => {
@@ -217,7 +228,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
                 router.push("/");
               }}
             >
-              Reset demo
+              {c.resetDemo}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -225,14 +236,12 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
       <Dialog open={walkOpen} onOpenChange={setWalkOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Start the pitch walkthrough?</DialogTitle>
+            <DialogTitle>{c.walkStartTitle}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#5c6b80]">
-            The story starts again with unassigned container TCLU4829137. Demo changes in this browser are restored so the twelve steps can be repeated.
-          </p>
+          <p className="text-sm text-[#5c6b80]">{c.walkStartBody}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWalkOpen(false)}>
-              Cancel
+              {c.cancel}
             </Button>
             <Button
               onClick={() => {
@@ -241,7 +250,7 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
                 router.push("/dispatch?assignment=unassigned");
               }}
             >
-              Start walkthrough
+              {c.startWalk}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -265,6 +274,7 @@ function TourNav() {
 }
 
 function WalkthroughPanel() {
+  const { c } = useI18n();
   const walk = useDemo((state) => state.walkthrough);
   const data = useDemo();
   const setWalkStep = useDemo((state) => state.setWalkStep);
@@ -286,30 +296,30 @@ function WalkthroughPanel() {
     <div className="fixed top-14 left-1/2 z-40 w-[min(420px,calc(100%-1.5rem))] -translate-x-1/2 rounded-xl border bg-white p-3 shadow-xl">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-medium tracking-wide text-[#1d6fe8] uppercase">
-          Walkthrough {walk.step + 1} / {WALK_STEPS.length}
+          {fill(c.walkKicker, { step: walk.step + 1, total: WALK_STEPS.length })}
         </p>
         <button className="text-xs text-[#5c6b80]" onClick={endWalkthrough}>
-          Exit
+          {c.exit}
         </button>
       </div>
-      <h2 className="mt-1 text-sm font-semibold">{step.title}</h2>
-      <p className="mt-1 text-sm leading-5 text-[#3d4d63]">{step.body}</p>
+      <h2 className="mt-1 text-sm font-semibold">{c.walk[walk.step]?.title}</h2>
+      <p className="mt-1 text-sm leading-5 text-[#3d4d63]">{c.walk[walk.step]?.body}</p>
       {walk.step >= 10 ? (
-        <p className="mt-2 text-sm font-medium">Rosa’s balance {money(walkBalanceHint(data))}</p>
+        <p className="mt-2 text-sm font-medium">{fill(c.rosaBalance, { amount: money(walkBalanceHint(data)) })}</p>
       ) : null}
       <div className="mt-3 flex items-center gap-2">
         <Button size="sm" variant="outline" disabled={walk.step === 0} onClick={() => setWalkStep(walk.step - 1)}>
-          Back
+          {c.back}
         </Button>
         <Button size="sm" data-testid="walk-next" disabled={!ready} onClick={() => setWalkStep(walk.step + 1)}>
-          {last ? "Finish" : "Next"}
+          {last ? c.finish : c.next}
         </Button>
         {!ready ? (
           <button className="text-xs text-[#5c6b80] underline" onClick={() => setWalkStep(walk.step + 1)}>
-            Skip
+            {c.skip}
           </button>
         ) : (
-          <span className="text-xs text-emerald-700">Ready</span>
+          <span className="text-xs text-emerald-700">{c.ready}</span>
         )}
       </div>
     </div>
