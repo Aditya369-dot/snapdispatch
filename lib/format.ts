@@ -1,5 +1,19 @@
 const PACIFIC = "America/Los_Angeles";
 
+let activeLocale = "en-US";
+
+export function setActiveLocale(locale: string) {
+  activeLocale = locale;
+}
+
+export function getActiveLocale() {
+  return activeLocale;
+}
+
+function loc(locale?: string) {
+  return locale ?? activeLocale;
+}
+
 export const DEMO_NOW = "2026-10-01T09:40:00-07:00";
 export const DEMO_DAY = "2026-10-01";
 export const WEEK_START = "2026-09-28";
@@ -9,18 +23,26 @@ export function roundMoney(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-export function money(value: number) {
-  return value.toLocaleString("en-US", {
+export function money(value: number, locale?: string) {
+  return value.toLocaleString(loc(locale), {
     style: "currency",
     currency: "USD",
   });
 }
 
-export function moneyExact(value: number) {
-  return roundMoney(value).toLocaleString("en-US", {
+export function moneyExact(value: number, locale?: string) {
+  return roundMoney(value).toLocaleString(loc(locale), {
     style: "currency",
     currency: "USD",
   });
+}
+
+export function gallons(value: number, locale?: string) {
+  const formatted = value.toLocaleString(loc(locale), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return `${formatted} gal`;
 }
 
 export function iso(day: string, time: string) {
@@ -71,16 +93,16 @@ export function isThisWeek(isoStamp: string) {
   return key >= WEEK_START && key <= WEEK_END;
 }
 
-export function formatDate(isoStamp: string) {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatDate(isoStamp: string, locale?: string) {
+  return new Intl.DateTimeFormat(loc(locale), {
     timeZone: PACIFIC,
     month: "short",
     day: "numeric",
   }).format(new Date(isoStamp));
 }
 
-export function formatWeekday(isoStamp: string) {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatWeekday(isoStamp: string, locale?: string) {
+  return new Intl.DateTimeFormat(loc(locale), {
     timeZone: PACIFIC,
     weekday: "short",
     month: "short",
@@ -88,8 +110,8 @@ export function formatWeekday(isoStamp: string) {
   }).format(new Date(isoStamp));
 }
 
-export function formatTime(isoStamp: string) {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatTime(isoStamp: string, locale?: string) {
+  return new Intl.DateTimeFormat(loc(locale), {
     timeZone: PACIFIC,
     hour: "numeric",
     minute: "2-digit",
@@ -104,9 +126,9 @@ export function formatDayLabel(day: string) {
   return formatWeekday(`${day}T12:00:00-07:00`);
 }
 
-export function formatLongDate(dayOrIso: string) {
+export function formatLongDate(dayOrIso: string, locale?: string) {
   const isoStamp = dayOrIso.includes("T") ? dayOrIso : `${dayOrIso}T12:00:00-07:00`;
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(loc(locale), {
     timeZone: PACIFIC,
     weekday: "long",
     month: "long",
@@ -121,6 +143,6 @@ export function daysBetween(fromDay: string, toDay: string) {
   return Math.round((to - from) / 86_400_000);
 }
 
-export function miles(value: number) {
-  return `${Math.round(value).toLocaleString("en-US")} mi`;
+export function miles(value: number, locale?: string) {
+  return `${Math.round(value).toLocaleString(loc(locale))} mi`;
 }

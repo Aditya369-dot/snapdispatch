@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { flowFor } from "@/lib/flow";
 import { driverPayView, loadFinancials, loadRevenue } from "@/lib/finance";
 import { formatDateTime, money } from "@/lib/format";
-import { CATEGORY_LABEL, DELAY_LABEL, DOC_LABEL, PAID_BY_LABEL } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n";
+import { earningMemo, fill, statusText } from "@/lib/i18n/say";
 import { customer, place } from "@/lib/reference";
 import { useDemo } from "@/lib/store";
 import { cn } from "cn";
@@ -16,6 +17,8 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
 export function LoadDetail({ id, initialTab = "overview" }: { id: string; initialTab?: string }) {
+  const { c, lang, text } = useI18n();
+  const L = c.load;
   const demo = useDemo();
   const load = demo.loads.find((item) => item.id === id);
   const [tab, setTab] = useState(initialTab);
@@ -33,9 +36,9 @@ export function LoadDetail({ id, initialTab = "overview" }: { id: string; initia
   if (!load) {
     return (
       <div>
-        <PageHeader title="Load not found" description="That load isn’t in the demo company." />
+        <PageHeader title={L.missing} description={L.missingBody} />
         <Button asChild variant="outline">
-          <Link href="/loads">Back to loads</Link>
+          <Link href="/loads">{L.back}</Link>
         </Button>
       </div>
     );
@@ -49,44 +52,46 @@ export function LoadDetail({ id, initialTab = "overview" }: { id: string; initia
     <div>
       <PageHeader
         title={`${load.id} · ${load.containerNumber}`}
-        description={`${load.type === "import" ? "Import" : "Export"} · ${customer(load.customerId)?.name} · ${load.bookingNumber}`}
+        description={`${load.type === "import" ? c.import : c.export} · ${customer(load.customerId)?.name} · ${load.bookingNumber}`}
         actions={
           load.status !== "complete" ? (
-            <Button onClick={() => setAssignOpen(true)}>{load.driverId ? "Reassign" : "Assign driver"}</Button>
+            <Button onClick={() => setAssignOpen(true)}>{load.driverId ? L.reassign : L.assign}</Button>
           ) : null
         }
       />
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <StatusBadge load={load} />
-        {load.delays.length ? <TonePill tone="warn">Delayed · {DELAY_LABEL[load.delays.at(-1)!.reason]}</TonePill> : null}
-        <span className="text-sm text-[#5c6b80]">Customer total {money(loadRevenue(load))}</span>
+        {load.delays.length ? <TonePill tone="warn">{fill(L.delayed, { reason: c.delay[load.delays.at(-1)!.reason] })}</TonePill> : null}
+        <span className="text-sm text-[#5c6b80]">{fill(L.customerTotal, { amount: money(loadRevenue(load)) })}</span>
       </div>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="financials">Financials</TabsTrigger>
+          <TabsTrigger value="overview">{L.tabOverview}</TabsTrigger>
+          <TabsTrigger value="timeline">{L.tabTimeline}</TabsTrigger>
+          <TabsTrigger value="expenses">{L.tabExpenses}</TabsTrigger>
+          <TabsTrigger value="documents">{L.tabDocuments}</TabsTrigger>
+          <TabsTrigger value="financials">{L.tabFinancials}</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-3">
           <div className="grid gap-3 lg:grid-cols-2">
-            <Card title="Move">
-              <Info label="Pickup" value={`${place(load.pickupKey)?.name}`} extra={place(load.pickupKey)?.address} />
-              <Info label="Destination" value={`${place(load.destinationKey)?.name}`} extra={place(load.destinationKey)?.address} />
-              <Info label="Appointment" value={`${formatDateTime(load.appointmentStart)} – ${formatDateTime(load.appointmentEnd).split(", ").pop()}`} />
-              {load.lastFreeDay ? <Info label="Last free day" value={load.lastFreeDay} /> : null}
-              {load.emptyReturnDeadline ? <Info label="Empty return deadline" value={load.emptyReturnDeadline} /> : null}
-              {load.cutoff ? <Info label="Cutoff" value={load.cutoff} /> : null}
-              <Info label="Driver" value={driver?.name ?? "Unassigned"} />
-              <Info label="Truck" value={truck ? `${truck.unit} · ${truck.make} ${truck.model}` : "—"} />
+            <Card title={L.move}>
+              <Info label={L.pickup} value={`${place(load.pickupKey)?.name}`} extra={place(load.pickupKey)?.address} />
+              <Info label={L.destination} value={`${place(load.destinationKey)?.name}`} extra={place(load.destinationKey)?.address} />
+              <Info label={L.appointment} value={`${formatDateTime(load.appointmentStart)} – ${formatDateTime(load.appointmentEnd).split(", ").pop()}`} />
+              {load.lastFreeDay ? <Info label={L.lastFree} value={load.lastFreeDay} /> : null}
+              {load.emptyReturnDeadline ? <Info label={L.emptyDeadline} value={load.emptyReturnDeadline} /> : null}
+              {load.cutoff ? <Info label={L.cutoff} value={load.cutoff} /> : null}
+              <Info label={L.driver} value={driver?.name ?? c.unassigned} />
+              <Info label={L.truck} value={truck ? `${truck.unit} · ${truck.make} ${truck.model}` : "—"} />
             </Card>
-            <Card title="Notes">
-              <p className="text-sm">{load.notes || "No notes."}</p>
+            <Card title={L.notes}>
+              <p className="text-sm">{load.notes ? text(load.notes) : L.noNotes}</p>
               {load.type === "import" && load.status !== "created" ? (
                 <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                  Empty return is separate from delivery. The container still has to go back to {place(load.pickupKey)?.name}
-                  {load.emptyReturnDeadline ? ` by ${load.emptyReturnDeadline}` : ""}.
+                  {fill(L.emptySeparate, {
+                    place: place(load.pickupKey)?.name ?? "",
+                    deadline: load.emptyReturnDeadline ? fill(L.byDate, { date: load.emptyReturnDeadline }) : "",
+                  })}
                 </p>
               ) : null}
             </Card>
@@ -100,8 +105,8 @@ export function LoadDetail({ id, initialTab = "overview" }: { id: string; initia
                 <li key={step.status} className="flex gap-3 text-sm">
                   <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", event ? "bg-emerald-600" : "bg-slate-300")} />
                   <div>
-                    <p className={event ? "font-medium" : "text-[#5c6b80]"}>{step.label}</p>
-                    <p className="text-xs text-[#5c6b80]">{event ? formatDateTime(event.at) : "Not yet"}</p>
+                    <p className={event ? "font-medium" : "text-[#5c6b80]"}>{statusText(lang, { type: load.type, status: step.status })}</p>
+                    <p className="text-xs text-[#5c6b80]">{event ? formatDateTime(event.at) : L.notYet}</p>
                   </div>
                 </li>
               );
@@ -109,29 +114,29 @@ export function LoadDetail({ id, initialTab = "overview" }: { id: string; initia
           </ol>
           {load.delays.length ? (
             <div className="mt-4 space-y-2">
-              <h3 className="text-sm font-medium">Delays</h3>
+              <h3 className="text-sm font-medium">{L.delays}</h3>
               {load.delays.map((delay) => (
                 <p key={delay.id} className="text-sm text-amber-900">
-                  {formatDateTime(delay.at)} · {DELAY_LABEL[delay.reason]} · {delay.note}
+                  {formatDateTime(delay.at)} · {c.delay[delay.reason]} · {text(delay.note)}
                 </p>
               ))}
             </div>
           ) : null}
         </TabsContent>
         <TabsContent value="expenses" className="mt-3 space-y-3">
-          {fin.approved.concat(fin.pending).length === 0 ? <p className="text-sm text-[#5c6b80]">No expenses on this load.</p> : null}
+          {fin.approved.concat(fin.pending).length === 0 ? <p className="text-sm text-[#5c6b80]">{L.noExpenses}</p> : null}
           {demo.expenses
             .filter((expense) => expense.loadId === load.id)
             .map((expense) => (
               <div key={expense.id} className="rounded-lg border bg-white p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium">
-                    {CATEGORY_LABEL[expense.category]} · {expense.merchant}
+                    {c.category[expense.category]} · {expense.merchant}
                   </p>
                   <p className="font-semibold">{money(expense.amount)}</p>
                 </div>
                 <p className="text-xs text-[#5c6b80]">
-                  {expense.date} · {PAID_BY_LABEL[expense.paidBy]} · {expense.status.replaceAll("_", " ")}
+                  {expense.date} · {c.paidBy[expense.paidBy]} · {c.expenseStatus[expense.status]}
                 </p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   {expense.attachmentIds.map((docId) => {
@@ -144,7 +149,7 @@ export function LoadDetail({ id, initialTab = "overview" }: { id: string; initia
         </TabsContent>
         <TabsContent value="documents" className="mt-3 space-y-3">
           {demo.documents.filter((doc) => doc.loadId === load.id).length === 0 ? (
-            <p className="text-sm text-[#5c6b80]">No documents yet.</p>
+            <p className="text-sm text-[#5c6b80]">{L.noDocuments}</p>
           ) : null}
           {demo.documents
             .filter((doc) => doc.loadId === load.id)
@@ -152,9 +157,9 @@ export function LoadDetail({ id, initialTab = "overview" }: { id: string; initia
               <div key={doc.id} className="rounded-lg border bg-white p-3">
                 <div className="mb-2 flex items-center justify-between gap-2 text-sm">
                   <p>
-                    {DOC_LABEL[doc.type]} · {doc.fileName}
+                    {c.doc[doc.type]} · {doc.fileName}
                   </p>
-                  <TonePill tone={doc.reviewStatus === "approved" ? "ok" : doc.reviewStatus === "rejected" ? "late" : "warn"}>{doc.reviewStatus}</TonePill>
+                  <TonePill tone={doc.reviewStatus === "approved" ? "ok" : doc.reviewStatus === "rejected" ? "late" : "warn"}>{c.review[doc.reviewStatus]}</TonePill>
                 </div>
                 <DocumentPreview doc={doc} />
               </div>
@@ -170,6 +175,8 @@ export function LoadDetail({ id, initialTab = "overview" }: { id: string; initia
 }
 
 function Financials({ loadId }: { loadId: string }) {
+  const { c, lang } = useI18n();
+  const L = c.load;
   const demo = useDemo();
   const load = demo.loads.find((item) => item.id === loadId);
   if (!load) return null;
@@ -179,21 +186,23 @@ function Financials({ loadId }: { loadId: string }) {
   return (
     <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
       <div className="rounded-lg border bg-white p-3 text-sm">
-        <Line label="Customer linehaul" value={money(fin.linehaul)} />
-        <Line label="Additional charges" value={money(fin.accessorials)} />
-        <Line label="Customer total" value={money(fin.revenue)} strong />
-        <Line label={driver ? "Driver pay" : "Driver pay"} value={driver ? money(fin.driverCost) : "—"} />
-        <p className="mb-2 text-[11px] text-[#5c6b80]">{pay.detail}</p>
-        <Line label="Fuel" value={money(fin.fuel)} />
-        <Line label="Tolls" value={money(fin.tolls)} />
-        <Line label="Other approved expenses" value={money(fin.other)} />
-        <Line label="Pending expenses" value={money(fin.pendingTotal)} />
-        <p className="mb-2 text-[11px] text-[#5c6b80]">Pending receipts are not in the contribution until they are approved.</p>
-        <Line label="Estimated contribution" value={money(fin.contribution)} strong />
-        <p className="text-[11px] text-[#5c6b80]">Estimated contribution—before overhead and taxes.</p>
-        <p className="mt-2 text-[11px] text-[#5c6b80]">
-          Reimbursement owed to the driver ({money(fin.reimbursement)}) is not counted again as an operating expense. Company-paid expenses are included once.
+        <Line label={L.linehaul} value={money(fin.linehaul)} />
+        <Line label={L.accessorials} value={money(fin.accessorials)} />
+        <Line label={L.customerTotalLine} value={money(fin.revenue)} strong />
+        <Line label={L.driverPay} value={driver ? money(fin.driverCost) : "—"} />
+        <p className="mb-2 text-[11px] text-[#5c6b80]">
+          {driver
+            ? pay.lines.map((line) => `${earningMemo(lang, line.memo)} · ${line.posted ? L.posted : L.notPosted}`).join(" · ")
+            : L.unassignedPay}
         </p>
+        <Line label={L.fuel} value={money(fin.fuel)} />
+        <Line label={L.tolls} value={money(fin.tolls)} />
+        <Line label={L.other} value={money(fin.other)} />
+        <Line label={L.pending} value={money(fin.pendingTotal)} />
+        <p className="mb-2 text-[11px] text-[#5c6b80]">{L.pendingHint}</p>
+        <Line label={L.contribution} value={money(fin.contribution)} strong />
+        <p className="text-[11px] text-[#5c6b80]">{L.contributionHint}</p>
+        <p className="mt-2 text-[11px] text-[#5c6b80]">{fill(L.reimburseHint, { amount: money(fin.reimbursement) })}</p>
       </div>
       <div className="space-y-2">
         {demo.expenses.filter((expense) => expense.loadId === load.id).map((expense) => (
@@ -201,7 +210,7 @@ function Financials({ loadId }: { loadId: string }) {
             <div>
               <p className="font-medium">{expense.merchant}</p>
               <p className="text-xs text-[#5c6b80]">
-                {CATEGORY_LABEL[expense.category]} · {expense.status.replaceAll("_", " ")} · {PAID_BY_LABEL[expense.paidBy]}
+                {c.category[expense.category]} · {c.expenseStatus[expense.status]} · {c.paidBy[expense.paidBy]}
               </p>
             </div>
             <p className="font-medium">{money(expense.amount)}</p>

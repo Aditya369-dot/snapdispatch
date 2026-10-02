@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 
 export function ReasonDialog({
@@ -21,6 +22,7 @@ export function ReasonDialog({
   confirm: string;
   onConfirm: (reason: string) => void;
 }) {
+  const { c } = useI18n();
   const [reason, setReason] = useState("");
   return (
     <Dialog
@@ -40,7 +42,7 @@ export function ReasonDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {c.cancel}
           </Button>
           <Button
             onClick={() => {

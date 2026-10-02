@@ -9,14 +9,15 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { putFile } from "@/lib/files";
 import { DEMO_DAY, money } from "@/lib/format";
-import { CATEGORY_LABEL, PAID_BY_LABEL } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n";
+import { fill } from "@/lib/i18n/say";
 import { PITCH_LOAD_ID } from "@/lib/reference";
 import { useDemo, type AttachmentInput } from "@/lib/store";
 import type { ExpenseCategory, PaidBy } from "@/lib/types";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const CATEGORIES = Object.keys(CATEGORY_LABEL) as ExpenseCategory[];
+const CATEGORIES = ["fuel", "tolls", "parking", "scales", "chassis", "repairs", "port_fees", "miscellaneous"] as ExpenseCategory[];
 
 interface LocalFile {
   id: string;
@@ -40,6 +41,8 @@ export function ExpenseSheet({
   loadId?: string;
   truckId?: string;
 }) {
+  const { c, text } = useI18n();
+  const f = c.expenseForm;
   const addExpense = useDemo((state) => state.addExpense);
   const walk = useDemo((state) => state.walkthrough);
   const [category, setCategory] = useState<ExpenseCategory>("tolls");
@@ -63,7 +66,7 @@ export function ExpenseSheet({
       setAmount(pitch ? "45" : "");
       setMerchant(pitch ? "FasTrak" : "");
       setDate(DEMO_DAY);
-      setNotes(pitch ? "Bay Bridge toll on the Northbay delivery." : "");
+      setNotes(pitch ? f.pitchNote : "");
       setPaidBy("driver");
       setReimburse(true);
       setMissing(false);
@@ -106,13 +109,13 @@ export function ExpenseSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full gap-0 overflow-hidden p-0 sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Add expense</SheetTitle>
-          <p className="text-sm text-[#5c6b80]">{loadId ? `Tied to ${loadId}` : "Not tied to a load"}</p>
+          <SheetTitle>{f.title}</SheetTitle>
+          <p className="text-sm text-[#5c6b80]">{loadId ? fill(f.tied, { id: loadId }) : f.untied}</p>
         </SheetHeader>
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label>{f.category}</Label>
               <Select value={category} onValueChange={(value) => setCategory(value as ExpenseCategory)}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -120,35 +123,35 @@ export function ExpenseSheet({
                 <SelectContent>
                   {CATEGORIES.map((item) => (
                     <SelectItem key={item} value={item}>
-                      {CATEGORY_LABEL[item]}
+                      {c.category[item]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{f.amount}</Label>
               <Input id="amount" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="45.00" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="merchant">Merchant</Label>
+            <Label htmlFor="merchant">{f.merchant}</Label>
             <Input id="merchant" value={merchant} onChange={(event) => setMerchant(event.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="expense-date">Date</Label>
+            <Label htmlFor="expense-date">{f.date}</Label>
             <Input id="expense-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Paid by</Label>
+            <Label>{f.paidBy}</Label>
             <Select value={paidBy} onValueChange={(value) => setPaidBy(value as PaidBy)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(PAID_BY_LABEL) as PaidBy[]).map((item) => (
+                {(Object.keys(c.paidBy) as PaidBy[]).map((item) => (
                   <SelectItem key={item} value={item}>
-                    {PAID_BY_LABEL[item]}
+                    {c.paidBy[item]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -157,24 +160,24 @@ export function ExpenseSheet({
           {paidBy === "driver" ? (
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={reimburse} onCheckedChange={(checked) => setReimburse(checked === true)} />
-              Reimbursement requested
+              {f.reimburse}
             </label>
           ) : (
-            <p className="text-xs text-[#5c6b80]">Company-paid expenses are operating costs. They are not added to driver pay.</p>
+            <p className="text-xs text-[#5c6b80]">{f.companyPaid}</p>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor="expense-notes">Notes</Label>
+            <Label htmlFor="expense-notes">{f.notes}</Label>
             <Textarea id="expense-notes" rows={2} value={notes} onChange={(event) => setNotes(event.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Receipt</Label>
+            <Label>{f.receipt}</Label>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={useSample}>
-                Use sample receipt
+                {f.sample}
               </Button>
               <Button type="button" variant="outline" size="sm" asChild>
                 <label>
-                  Choose file
+                  {f.choose}
                   <input
                     className="sr-only"
                     type="file"
@@ -189,7 +192,7 @@ export function ExpenseSheet({
               </Button>
               <Button type="button" variant="outline" size="sm" asChild>
                 <label>
-                  Camera
+                  {f.camera}
                   <input
                     className="sr-only"
                     type="file"
@@ -205,23 +208,23 @@ export function ExpenseSheet({
             </div>
             {files.map((file) => (
               <div key={file.id} className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-sm">
-                <span className="truncate">{file.sample ? "Sample receipt" : file.name}</span>
+                <span className="truncate">{file.sample ? f.sampleName : file.name}</span>
                 <button type="button" className="text-xs text-[#5c6b80]" onClick={() => setFiles((current) => current.filter((item) => item.id !== file.id))}>
-                  Remove
+                  {c.remove}
                 </button>
               </div>
             ))}
             {files.some((file) => file.preview) ? (
               // Local object URLs from the file picker are not next/image sources.
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={files.find((file) => file.preview)?.preview} alt="Receipt preview" className="max-h-40 rounded-md border object-contain" />
+              <img src={files.find((file) => file.preview)?.preview} alt={f.previewAlt} className="max-h-40 rounded-md border object-contain" />
             ) : null}
             <label className="flex items-center gap-2 text-sm">
               <Checkbox checked={missing} onCheckedChange={(checked) => setMissing(checked === true)} />
-              Receipt is missing
+              {f.missing}
             </label>
             {missing ? (
-              <Textarea value={missingReason} onChange={(event) => setMissingReason(event.target.value)} placeholder="Why is the receipt missing?" rows={2} />
+              <Textarea value={missingReason} onChange={(event) => setMissingReason(event.target.value)} placeholder={f.why} rows={2} />
             ) : null}
           </div>
         </div>
@@ -234,7 +237,7 @@ export function ExpenseSheet({
               void submit();
             }}
           >
-            {busy ? "Saving…" : `Submit ${amount ? money(Number(amount) || 0) : "expense"}`}
+            {busy ? f.saving : amount ? fill(f.submit, { amount: money(Number(amount) || 0) }) : f.submitPlain}
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -287,10 +290,10 @@ export function ExpenseSheet({
         attachments,
       });
       if (!result.ok) {
-        toast.error(result.reason);
+        toast.error(text(result.reason));
         return;
       }
-      toast.success("Expense submitted for approval");
+      toast.success(f.toast);
       onOpenChange(false);
     } finally {
       setBusy(false);

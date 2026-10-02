@@ -6,6 +6,8 @@ import { nextDriverAction, type DriverActionName } from "@/lib/flow";
 import { addDays, addMinutes } from "@/lib/format";
 import { PITCH_DRIVER_ID } from "@/lib/reference";
 import { buildSeed } from "@/lib/seed";
+import type { Lang } from "@/lib/i18n/copy";
+import { healTruck } from "@/lib/units";
 import type {
   Activity,
   DelayReason,
@@ -33,6 +35,7 @@ interface UiState {
   actingDriverId: string;
   walkthrough: WalkthroughState | null;
   tour: TourState;
+  language: Lang;
 }
 
 interface Actions {
@@ -42,6 +45,7 @@ interface Actions {
   endWalkthrough: () => void;
   markTour: (patch: Partial<TourState>) => void;
   setView: (view: "owner" | "driver", driverId?: string) => void;
+  setLanguage: (language: Lang) => void;
   createLoad: (input: CreateLoadInput) => Result & { id?: string };
   assignLoad: (loadId: string, driverId: string, truckId: string) => Result;
   driverAction: (loadId: string, action: DriverActionName) => Result;
@@ -127,6 +131,7 @@ function freshUi(): UiState {
     actingDriverId: PITCH_DRIVER_ID,
     walkthrough: null,
     tour: {},
+    language: "en",
   };
 }
 
@@ -163,7 +168,8 @@ export const useDemo = create<DemoState>()(
         ...freshUi(),
         resetDemo: () => {
           void clearFiles();
-          set({ ...buildSeed(), ...freshUi() });
+          const language = get().language;
+          set({ ...buildSeed(), ...freshUi(), language });
         },
         startWalkthrough: () => {
           void clearFiles();
@@ -171,6 +177,7 @@ export const useDemo = create<DemoState>()(
           set({
             ...next,
             ...freshUi(),
+            language: get().language,
             walkthrough: { active: true, step: 0, startedAt: next.clock },
           });
         },
@@ -201,6 +208,10 @@ export const useDemo = create<DemoState>()(
           const actingDriverId = driverId ?? get().actingDriverId;
           if (get().view === view && get().actingDriverId === actingDriverId) return;
           set({ view, actingDriverId });
+        },
+        setLanguage: (language) => {
+          if (get().language === language) return;
+          set({ language });
         },
         createLoad: (input) => {
           const container = input.containerNumber.toUpperCase().replace(/\s+/g, "");
@@ -730,11 +741,15 @@ export const useDemo = create<DemoState>()(
         counters: state.counters,
         view: state.view,
         actingDriverId: state.actingDriverId,
+        language: state.language,
         walkthrough: state.walkthrough,
         tour: state.tour,
       }),
       onRehydrateStorage: () => (state) => {
-        if (!state?.loads || !state.drivers) return;
+        if (!state) return;
+        if (state.language !== "es" && state.language !== "en") state.language = "en";
+        if (state.trucks) state.trucks = state.trucks.map((truck) => healTruck(truck));
+        if (!state.loads || !state.drivers) return;
         state.ledger = ensureLedger(state);
       },
     },

@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { reached } from "@/lib/flow";
 import { loadRevenue } from "@/lib/finance";
 import { addMinutes, formatTime, money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
+import { fill } from "@/lib/i18n/say";
 import { laneLabel } from "@/lib/metrics";
 import { CUSTOMERS, PITCH_LOAD_ID, PLACES, customer } from "@/lib/reference";
 import { useDemo } from "@/lib/store";
@@ -22,14 +24,17 @@ import { Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export default function DispatchPage() {
+  const { c } = useI18n();
   return (
-    <Suspense fallback={<p className="text-sm text-[#5c6b80]">Loading dispatch…</p>}>
+    <Suspense fallback={<p className="text-sm text-[#5c6b80]">{c.loadingDispatch}</p>}>
       <DispatchScreen />
     </Suspense>
   );
 }
 
 function DispatchScreen() {
+  const { c } = useI18n();
+  const d = c.dispatch;
   const demo = useDemo();
   const params = useSearchParams();
   const [mode, setMode] = useState<"table" | "board">("table");
@@ -67,33 +72,33 @@ function DispatchScreen() {
   return (
     <div>
       <PageHeader
-        title="Dispatch"
-        description="Assign containers, watch appointments, and keep trucks from overlapping."
+        title={d.title}
+        description={d.description}
         actions={
           <>
             <div className="flex rounded-lg bg-[#eef2f6] p-0.5">
               <button className={cn("rounded-md px-2 py-1 text-xs", mode === "table" && "bg-white shadow-sm")} onClick={() => setMode("table")}>
-                Table
+                {d.table}
               </button>
               <button className={cn("rounded-md px-2 py-1 text-xs", mode === "board" && "bg-white shadow-sm")} onClick={() => setMode("board")}>
-                Board
+                {d.board}
               </button>
             </div>
-            <Button onClick={() => setCreateOpen(true)}>Create load</Button>
+            <Button onClick={() => setCreateOpen(true)}>{d.create}</Button>
           </>
         }
       />
       <div className="mb-3 flex flex-wrap gap-2">
-        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search load, container, customer, driver" className="w-full sm:w-72" />
-        <Filter value={type} onChange={setType} options={[["all", "All types"], ["import", "Import"], ["export", "Export"]]} />
+        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={d.search} className="w-full sm:w-72" />
+        <Filter value={type} onChange={setType} options={[["all", d.allTypes], ["import", c.import], ["export", c.export]]} />
         <Filter
           value={driverId}
           onChange={setDriverId}
-          options={[["all", "All drivers"], ["none", "Unassigned"], ...demo.drivers.map((driver) => [driver.id, driver.name] as [string, string])]}
+          options={[["all", d.allDrivers], ["none", d.unassigned], ...demo.drivers.map((driver) => [driver.id, driver.name] as [string, string])]}
         />
         {(assignment !== "all" || scope !== "all") && (
           <Link href="/dispatch" className="self-center text-xs text-[#1d6fe8]">
-            Clear page filters
+            {d.clearFilters}
           </Link>
         )}
       </div>
@@ -102,7 +107,7 @@ function DispatchScreen() {
           <table className="w-full min-w-[1100px] text-left text-[13px]">
             <thead className="bg-[#f8fafc] text-[11px] tracking-wide text-[#5c6b80] uppercase">
               <tr>
-                {["Load", "Container", "Type", "Customer", "Lane", "Appointment", "Driver", "Truck", "Status", "Price", "Documents", ""].map((label) => (
+                {[d.load, d.container, d.type, d.customer, d.lane, d.appointment, d.driver, d.truck, d.status, d.price, d.documents, ""].map((label) => (
                   <th key={label} className="px-2 py-2 font-medium">
                     {label}
                   </th>
@@ -125,7 +130,7 @@ function DispatchScreen() {
                       </Link>
                     </td>
                     <td className="px-2 py-1.5">{load.containerNumber}</td>
-                    <td className="px-2 py-1.5 capitalize">{load.type}</td>
+                    <td className="px-2 py-1.5">{load.type === "import" ? c.import : c.export}</td>
                     <td className="px-2 py-1.5">{customer(load.customerId)?.name}</td>
                     <td className="px-2 py-1.5">{laneLabel(load)}</td>
                     <td className="px-2 py-1.5 tabular-nums">{formatTime(load.appointmentStart)}</td>
@@ -135,7 +140,7 @@ function DispatchScreen() {
                       <StatusBadge load={load} />
                     </td>
                     <td className="px-2 py-1.5 tabular-nums">{money(loadRevenue(load))}</td>
-                    <td className="px-2 py-1.5">{docLabel(load, demo.documents)}</td>
+                    <td className="px-2 py-1.5">{docLabel(load, demo.documents, c)}</td>
                     <td className="px-2 py-1.5 text-right">
                       {load.status !== "complete" ? (
                         <Button
@@ -149,7 +154,7 @@ function DispatchScreen() {
                             setAssignLoad(load);
                           }}
                         >
-                          {load.driverId ? "Reassign" : "Assign"}
+                          {load.driverId ? d.reassign : d.assign}
                         </Button>
                       ) : null}
                     </td>
@@ -158,16 +163,16 @@ function DispatchScreen() {
               })}
             </tbody>
           </table>
-          {rows.length === 0 ? <p className="p-4 text-sm text-[#5c6b80]">No loads match these filters.</p> : null}
+          {rows.length === 0 ? <p className="p-4 text-sm text-[#5c6b80]">{d.empty}</p> : null}
         </div>
       ) : (
         <div className="flex gap-2 overflow-x-auto pb-2">
           {[
-            ["Unassigned", (load: Load) => load.status === "created"],
-            ["Assigned", (load: Load) => load.status === "assigned"],
-            ["In progress", (load: Load) => ["accepted", "at_port", "picked_up", "at_customer", "delivered", "gated_in"].includes(load.status)],
-            ["Empty return", (load: Load) => load.status === "empty_return_pending" || load.status === "empty_returned"],
-            ["Complete", (load: Load) => load.status === "complete"],
+            [d.colUnassigned, (load: Load) => load.status === "created"],
+            [d.colAssigned, (load: Load) => load.status === "assigned"],
+            [d.colProgress, (load: Load) => ["accepted", "at_port", "picked_up", "at_customer", "delivered", "gated_in"].includes(load.status)],
+            [d.colEmpty, (load: Load) => load.status === "empty_return_pending" || load.status === "empty_returned"],
+            [d.colComplete, (load: Load) => load.status === "complete"],
           ].map(([title, test]) => (
             <div key={title as string} className="w-64 shrink-0 rounded-lg border bg-[#f8fafc]">
               <p className="border-b px-2 py-1.5 text-xs font-semibold">
@@ -185,7 +190,7 @@ function DispatchScreen() {
                   >
                     <p className="font-medium">{load.containerNumber}</p>
                     <p className="text-[#5c6b80]">{customer(load.customerId)?.name}</p>
-                    <p className="mt-1">{demo.drivers.find((driver) => driver.id === load.driverId)?.name ?? "Unassigned"}</p>
+                    <p className="mt-1">{demo.drivers.find((driver) => driver.id === load.driverId)?.name ?? c.unassigned}</p>
                   </button>
                 ))}
               </div>
@@ -199,15 +204,15 @@ function DispatchScreen() {
   );
 }
 
-function docLabel(load: Load, documents: { loadId?: string; type: string; reviewStatus: string }[]) {
+function docLabel(load: Load, documents: { loadId?: string; type: string; reviewStatus: "pending" | "approved" | "rejected" }[], c: ReturnType<typeof useI18n>["c"]) {
   if (load.type === "export") {
     const gate = documents.find((doc) => doc.loadId === load.id && doc.type === "gate_receipt");
-    return gate ? `Gate ${gate.reviewStatus}` : reached(load, "gated_in") ? "Gate missing" : "—";
+    return gate ? fill(c.dispatch.gateStatus, { status: c.review[gate.reviewStatus] }) : reached(load, "gated_in") ? c.dispatch.gateMissing : "—";
   }
-  if (!reached(load, "delivered")) return "POD not due";
+  if (!reached(load, "delivered")) return c.dispatch.podNotDue;
   const pod = documents.find((doc) => doc.loadId === load.id && doc.type === "pod");
-  if (!pod) return "POD missing";
-  return `POD ${pod.reviewStatus}`;
+  if (!pod) return c.dispatch.podMissing;
+  return fill(c.dispatch.podStatus, { status: c.review[pod.reviewStatus] });
 }
 
 function Filter({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: [string, string][] }) {
@@ -228,6 +233,8 @@ function Filter({ value, onChange, options }: { value: string; onChange: (value:
 }
 
 function CreateLoadDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { c, text } = useI18n();
+  const d = c.dispatch;
   const createLoad = useDemo((state) => state.createLoad);
   const router = useRouter();
   const [type, setType] = useState<LoadType>("import");
@@ -244,25 +251,25 @@ function CreateLoadDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create load</DialogTitle>
+          <DialogTitle>{d.create}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-2 sm:grid-cols-2">
           <Label className="sm:col-span-2">
-            Type
+            {d.typeLabel}
             <Select value={type} onValueChange={(value) => setType(value as LoadType)}>
               <SelectTrigger className="mt-1 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="import">Import</SelectItem>
-                <SelectItem value="export">Export</SelectItem>
+                <SelectItem value="import">{c.import}</SelectItem>
+                <SelectItem value="export">{c.export}</SelectItem>
               </SelectContent>
             </Select>
           </Label>
-          <Field label="Container" value={container} onChange={setContainer} placeholder="MSCU1234567" />
-          <Field label="Booking" value={booking} onChange={setBooking} />
+          <Field label={d.containerLabel} value={container} onChange={setContainer} placeholder={d.placeholderContainer} />
+          <Field label={d.booking} value={booking} onChange={setBooking} />
           <Label className="sm:col-span-2">
-            Customer
+            {d.customerLabel}
             <Select value={customerId} onValueChange={setCustomerId}>
               <SelectTrigger className="mt-1 w-full">
                 <SelectValue />
@@ -276,12 +283,12 @@ function CreateLoadDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
               </SelectContent>
             </Select>
           </Label>
-          <PlaceSelect label="Pickup" value={pickup} onChange={setPickup} places={places} />
-          <PlaceSelect label="Destination" value={drop} onChange={setDrop} places={places} />
-          <Field label="Appointment" value={when} onChange={setWhen} type="datetime-local" />
-          <Field label="Customer rate" value={rate} onChange={setRate} />
+          <PlaceSelect label={d.pickup} value={pickup} onChange={setPickup} places={places} />
+          <PlaceSelect label={d.destination} value={drop} onChange={setDrop} places={places} />
+          <Field label={d.appointmentLabel} value={when} onChange={setWhen} type="datetime-local" />
+          <Field label={d.rate} value={rate} onChange={setRate} />
           <Label className="sm:col-span-2">
-            Notes
+            {d.notes}
             <Input className="mt-1" value={notes} onChange={(event) => setNotes(event.target.value)} />
           </Label>
         </div>
@@ -302,15 +309,15 @@ function CreateLoadDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
                 notes,
               });
               if (!result.ok) {
-                toast.error(result.reason);
+                toast.error(text(result.reason));
                 return;
               }
-              toast.success(`${result.id} created`);
+              toast.success(fill(d.createdToast, { id: result.id ?? "" }));
               onOpenChange(false);
               if (result.id) router.push(`/loads/${result.id}`);
             }}
           >
-            Save load
+            {d.save}
           </Button>
         </DialogFooter>
       </DialogContent>

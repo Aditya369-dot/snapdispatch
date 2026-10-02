@@ -1,18 +1,20 @@
 "use client";
 
 import { getFile } from "@/lib/files";
+import { useI18n } from "@/lib/i18n";
 import { sampleDataUrl } from "@/lib/samples";
 import type { DocumentRecord } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 export function DocumentPreview({ doc }: { doc: DocumentRecord }) {
+  const { lang, c } = useI18n();
   if (doc.sampleKey) {
-    return <PreviewFrame doc={doc} url={sampleDataUrl(doc.sampleKey, doc.sampleParams ?? {})} />;
+    return <PreviewFrame doc={doc} url={sampleDataUrl(doc.sampleKey, doc.sampleParams ?? {}, lang)} />;
   }
-  return <StoredPreview doc={doc} />;
+  return <StoredPreview doc={doc} missingLabel={c.documents.previewMissing} loadingLabel={c.documents.previewLoading} />;
 }
 
-function StoredPreview({ doc }: { doc: DocumentRecord }) {
+function StoredPreview({ doc, missingLabel, loadingLabel }: { doc: DocumentRecord; missingLabel: string; loadingLabel: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [missing, setMissing] = useState(!doc.blobId);
 
@@ -39,8 +41,8 @@ function StoredPreview({ doc }: { doc: DocumentRecord }) {
     };
   }, [doc.blobId]);
 
-  if (missing) return <p className="text-sm text-[#5c6b80]">Preview isn’t available for this file.</p>;
-  if (!url) return <p className="text-sm text-[#5c6b80]">Loading preview…</p>;
+  if (missing) return <p className="text-sm text-[#5c6b80]">{missingLabel}</p>;
+  if (!url) return <p className="text-sm text-[#5c6b80]">{loadingLabel}</p>;
   return <PreviewFrame doc={doc} url={url} />;
 }
 

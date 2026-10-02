@@ -147,6 +147,14 @@ export interface Truck {
   vin: string;
   scheduledNote?: string;
   staleLocation?: boolean;
+  /** Fuel-log and period-miles snapshot date (YYYY-MM-DD). */
+  asOf: string;
+  /** First day included in periodMiles and gallons. */
+  periodStart: string;
+  /** Miles driven from periodStart through asOf. Odometer stays lifetime. */
+  periodMiles: number;
+  /** Diesel gallons from the synthetic fuel log for that same period. */
+  gallons: number;
 }
 
 export interface Expense {

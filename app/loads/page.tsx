@@ -4,6 +4,7 @@ import { PageHeader, StatusBadge } from "@/components/status-badge";
 import { Input } from "@/components/ui/input";
 import { countsAsRevenue, loadRevenue, revenueStamp } from "@/lib/finance";
 import { DEMO_DAY, dayKey, isThisWeek, money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { customer } from "@/lib/reference";
 import { useDemo } from "@/lib/store";
 import Link from "next/link";
@@ -11,14 +12,16 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 export default function LoadsPage() {
+  const { c } = useI18n();
   return (
-    <Suspense fallback={<p className="text-sm">Loading loads…</p>}>
+    <Suspense fallback={<p className="text-sm">{c.loadingLoads}</p>}>
       <LoadsScreen />
     </Suspense>
   );
 }
 
 function LoadsScreen() {
+  const { c } = useI18n();
   const loads = useDemo((state) => state.loads);
   const drivers = useDemo((state) => state.drivers);
   const params = useSearchParams();
@@ -35,20 +38,19 @@ function LoadsScreen() {
     if (!needle) return true;
     return [load.id, load.containerNumber, customer(load.customerId)?.name].join(" ").toLowerCase().includes(needle);
   });
+  const copy = c.loads;
   return (
     <div>
       <PageHeader
-        title="Loads"
-        description={
-          completed === "today" ? "Loads completed today." : revenue === "week" ? "Loads that count toward this week’s delivered revenue." : "Every container in the demo book."
-        }
+        title={copy.title}
+        description={completed === "today" ? copy.today : revenue === "week" ? copy.week : copy.all}
       />
-      <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" className="mb-3 w-full sm:w-64" />
+      <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="mb-3 w-full sm:w-64" />
       <div className="overflow-x-auto rounded-lg border bg-white">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead className="bg-[#f8fafc] text-[11px] tracking-wide text-[#5c6b80] uppercase">
             <tr>
-              {["Load", "Container", "Customer", "Driver", "Appointment", "Status", "Customer total"].map((label) => (
+              {[copy.load, copy.container, copy.customer, copy.driver, copy.appointment, copy.status, copy.total].map((label) => (
                 <th key={label} className="px-3 py-2 font-medium">{label}</th>
               ))}
             </tr>
@@ -69,7 +71,7 @@ function LoadsScreen() {
             ))}
           </tbody>
         </table>
-        {rows.length === 0 ? <p className="p-4 text-sm text-[#5c6b80]">No loads in this view.</p> : null}
+        {rows.length === 0 ? <p className="p-4 text-sm text-[#5c6b80]">{copy.empty}</p> : null}
       </div>
     </div>
   );

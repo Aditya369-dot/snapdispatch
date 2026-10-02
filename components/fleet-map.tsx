@@ -1,9 +1,11 @@
 "use client";
 
+import { UnitFigures } from "@/components/unit-figures";
 import { Button } from "@/components/ui/button";
 import { fleetMarkers, type FleetMarker } from "@/lib/fleet";
 import { formatTime } from "@/lib/format";
-import { statusLabel } from "@/lib/flow";
+import { useI18n } from "@/lib/i18n";
+import { fill, statusText } from "@/lib/i18n/say";
 import { PLACES, customer } from "@/lib/reference";
 import { useDemo } from "@/lib/store";
 import { cn } from "cn";
@@ -29,6 +31,7 @@ export function FleetMap({
   selectedId?: string;
   onSelect?: (truckId: string) => void;
 }) {
+  const { c } = useI18n();
   const trucks = useDemo((state) => state.trucks);
   const loads = useDemo((state) => state.loads);
   const drivers = useDemo((state) => state.drivers);
@@ -57,20 +60,20 @@ export function FleetMap({
       <div className="overflow-hidden rounded-lg border bg-[#f7f4ee]">
         <div className="flex items-center justify-between gap-2 border-b bg-white px-3 py-2">
           <div>
-            <p className="text-sm font-medium">Oakland corridor</p>
-            <p className="text-[11px] text-[#5c6b80]">Schematic · simulated tracking, not a live GPS feed</p>
+            <p className="text-sm font-medium">{c.fleet.corridor}</p>
+            <p className="text-[11px] text-[#5c6b80]">{c.fleet.schematic}</p>
           </div>
           {variant === "full" ? (
             <Button size="sm" variant="outline" onClick={() => setPlaying((value) => !value)}>
               {playing ? <Pause /> : <Play />}
-              {playing ? "Pause" : "Play"} demo movement
+              {playing ? c.fleet.pause : c.fleet.play}
             </Button>
           ) : null}
         </div>
-        <svg viewBox="0 0 1000 520" className="h-auto w-full" role="img" aria-label="Fleet schematic from Oakland to Modesto">
+        <svg viewBox="0 0 1000 520" className="h-auto w-full" role="img" aria-label={c.fleet.mapLabel}>
           <rect width="1000" height="520" fill="#f6f3ec" />
           <path d="M0 40 L120 20 L180 80 L150 180 L90 260 L40 360 L0 420 Z" fill="#c5d7e8" />
-          <text x="48" y="150" fill="#4d6d8a" fontSize="12">San Francisco Bay</text>
+          <text x="48" y="150" fill="#4d6d8a" fontSize="12">{c.fleet.bay}</text>
           <path d="M168 190 L248 286 L300 340 L328 410" fill="none" stroke="#8ea0b3" strokeWidth="10" strokeLinecap="round" />
           <path d="M300 340 L470 318 L560 300" fill="none" stroke="#8ea0b3" strokeWidth="10" strokeLinecap="round" />
           <path d="M560 300 L690 210 L720 230" fill="none" stroke="#8ea0b3" strokeWidth="8" strokeLinecap="round" />
@@ -87,7 +90,7 @@ export function FleetMap({
             </g>
           ))}
           <text x={PLACES.trapac.x - 20} y={PLACES.trapac.y - 16} fontSize="11" fill="#1d4f91">
-            Port
+            {c.fleet.port}
           </text>
           {markers.map((marker) => {
             const dx = marker.moving ? shift : 0;
@@ -125,28 +128,32 @@ function MarkerCard({
   marker: FleetMarker;
   drivers: { id: string; name: string }[];
 }) {
+  const { c, lang, text } = useI18n();
   const driver = drivers.find((item) => item.id === (marker.load?.driverId ?? marker.truck.driverId));
+  const sample = marker.eta.match(/^Sample ETA (\d+) min$/);
+  const eta = sample ? fill(c.fleet.sampleEta, { minutes: sample[1] }) : text(marker.eta);
   return (
     <div className="rounded-lg border bg-white p-3 text-sm">
       <p className="text-base font-semibold">{marker.truck.unit}</p>
       <p className="text-[#5c6b80]">
         {marker.truck.year} {marker.truck.make} {marker.truck.model}
       </p>
+      <div className="mt-3">
+        <UnitFigures truck={marker.truck} variant="strip" />
+      </div>
       <dl className="mt-3 space-y-2">
-        <Row label="Driver" value={driver?.name ?? "Unassigned"} />
-        <Row label="Load" value={marker.load ? `${marker.load.id} · ${marker.load.containerNumber}` : "No active load"} />
-        <Row label="Status" value={marker.load ? statusLabel(marker.load) : marker.truck.operational === "out_of_service" ? "Out of service" : "Idle"} />
-        <Row label="Customer" value={marker.load ? customer(marker.load.customerId)?.name ?? "—" : "—"} />
-        <Row label="Next stop" value={marker.nextStop} />
-        <Row label="ETA" value={marker.eta} />
-        <Row label="Last update" value={formatTime(marker.lastUpdate)} />
+        <Row label={c.fleet.driver} value={driver?.name ?? c.unassigned} />
+        <Row label={c.fleet.load} value={marker.load ? `${marker.load.id} · ${marker.load.containerNumber}` : c.fleet.noLoad} />
+        <Row label={c.fleet.status} value={marker.load ? statusText(lang, marker.load) : marker.truck.operational === "out_of_service" ? c.fleet.out : c.fleet.idleStatus} />
+        <Row label={c.fleet.customer} value={marker.load ? customer(marker.load.customerId)?.name ?? "—" : "—"} />
+        <Row label={c.fleet.nextStop} value={text(marker.nextStop)} />
+        <Row label={c.fleet.eta} value={eta} />
+        <Row label={c.fleet.lastUpdate} value={formatTime(marker.lastUpdate)} />
       </dl>
       {marker.stale ? (
-        <p className="mt-3 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
-          Location has not updated since 3:05 AM. This pin is stale.
-        </p>
+        <p className="mt-3 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-900">{c.fleet.staleNote}</p>
       ) : (
-        <p className="mt-3 text-[11px] text-[#5c6b80]">Simulated tracking. Sample ETA is not from a routing provider.</p>
+        <p className="mt-3 text-[11px] text-[#5c6b80]">{c.fleet.etaNote}</p>
       )}
     </div>
   );

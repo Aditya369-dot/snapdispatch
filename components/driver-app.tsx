@@ -2,7 +2,9 @@
 
 import { DocumentPreview } from "@/components/document-preview";
 import { ExpenseSheet } from "@/components/expense-sheet";
+import { LanguageSwitch } from "@/components/language-switch";
 import { StatusBadge, TonePill } from "@/components/status-badge";
+import { UnitFigures } from "@/components/unit-figures";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +13,9 @@ import { putFile } from "@/lib/files";
 import { currentLoad, driverBalance, driverPayView } from "@/lib/finance";
 import { nextDriverAction, reached } from "@/lib/flow";
 import { formatDate, formatTime, money } from "@/lib/format";
-import { DELAY_LABEL, DELAY_OPTIONS, EXPENSE_STATUS_LABEL, payRuleDetail } from "@/lib/labels";
+import { useI18n } from "@/lib/i18n";
+import { actionText, earningMemo, fill, localizeMemo, payRuleDetail } from "@/lib/i18n/say";
+import { DELAY_OPTIONS } from "@/lib/labels";
 import { customer, place } from "@/lib/reference";
 import { useDemo } from "@/lib/store";
 import type { DelayReason, Load } from "@/lib/types";
@@ -22,10 +26,16 @@ import { toast } from "sonner";
 type Tab = "today" | "loads" | "expenses" | "earnings" | "profile";
 
 export function DriverApp() {
+  const { c } = useI18n();
+  const d = c.driverApp;
   const [tab, setTab] = useState<Tab>("today");
   const driverId = useDemo((state) => state.actingDriverId);
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center justify-between border-b px-3 py-2">
+        <p className="text-xs font-semibold">SnapDispatch</p>
+        <LanguageSwitch compact />
+      </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {tab === "today" ? <Today onJump={setTab} /> : null}
         {tab === "loads" ? <MyLoads /> : null}
@@ -36,11 +46,11 @@ export function DriverApp() {
       <nav className="grid grid-cols-5 border-t bg-white text-[11px]">
         {(
           [
-            ["today", "Today"],
-            ["loads", "My Loads"],
-            ["expenses", "Expenses"],
-            ["earnings", "Earnings"],
-            ["profile", "Profile"],
+            ["today", d.today],
+            ["loads", d.loads],
+            ["expenses", d.expenses],
+            ["earnings", d.earnings],
+            ["profile", d.profile],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -58,6 +68,8 @@ export function DriverApp() {
 }
 
 function Today({ onJump }: { onJump: (tab: Tab) => void }) {
+  const { c, lang, text } = useI18n();
+  const d = c.driverApp;
   const demo = useDemo();
   const driver = demo.drivers.find((item) => item.id === demo.actingDriverId);
   const truck = demo.trucks.find((item) => item.id === driver?.truckId);
@@ -79,42 +91,50 @@ function Today({ onJump }: { onJump: (tab: Tab) => void }) {
   return (
     <div className="space-y-3 p-3">
       <div>
-        <p className="text-xs text-[#5c6b80]">Good morning</p>
+        <p className="text-xs text-[#5c6b80]">{d.morning}</p>
         <h1 className="text-xl font-semibold">{driver.name}</h1>
-        <p className="text-sm text-[#5c6b80]">{assignedTruck ? `${assignedTruck.unit} · ${assignedTruck.make} ${assignedTruck.model}` : "No truck assigned"}</p>
+        <p className="text-sm text-[#5c6b80]">{assignedTruck ? `${assignedTruck.unit} · ${assignedTruck.make} ${assignedTruck.model}` : d.noTruck}</p>
       </div>
+      {assignedTruck ? (
+        <div className="rounded-xl border p-3">
+          <p className="mb-1 text-[11px] font-medium tracking-wide text-[#5c6b80] uppercase">{d.unitStrip}</p>
+          <UnitFigures truck={assignedTruck} variant="strip" />
+        </div>
+      ) : null}
       {driver.availability === "off" ? (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{driver.availabilityNote ?? "Off today"}</p>
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{text(driver.availabilityNote ?? "Off today")}</p>
       ) : null}
       {!load ? (
         <div className="rounded-xl border bg-[#f8fafc] p-4">
-          <p className="font-medium">No active load</p>
-          <p className="mt-1 text-sm text-[#5c6b80]">You’re clear for the next dispatch. New work will show up here as soon as it’s assigned.</p>
+          <p className="font-medium">{d.noLoad}</p>
+          <p className="mt-1 text-sm text-[#5c6b80]">{d.clearForDispatch}</p>
         </div>
       ) : (
         <article className="space-y-3 rounded-xl border p-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-xs text-[#5c6b80]">{load.id} · {load.type === "import" ? "Import" : "Export"}</p>
+              <p className="text-xs text-[#5c6b80]">{load.id} · {load.type === "import" ? c.import : c.export}</p>
               <p className="text-lg font-semibold tracking-tight">{load.containerNumber}</p>
               <p className="text-sm">{customer(load.customerId)?.name}</p>
             </div>
             <StatusBadge load={load} />
           </div>
-          <Stop label={load.type === "export" ? "Shipper" : "Pickup"} name={place(load.pickupKey)?.name} address={place(load.pickupKey)?.address} />
-          <Stop label={load.type === "export" ? "Port" : "Delivery"} name={place(load.destinationKey)?.name} address={place(load.destinationKey)?.address} />
+          <Stop label={load.type === "export" ? d.shipper : d.pickup} name={place(load.pickupKey)?.name} address={place(load.pickupKey)?.address} />
+          <Stop label={load.type === "export" ? d.port : d.delivery} name={place(load.destinationKey)?.name} address={place(load.destinationKey)?.address} />
           <p className="text-sm">
-            Appointment {formatTime(load.appointmentStart)}–{formatTime(load.appointmentEnd)}
+            {fill(d.appointment, { start: formatTime(load.appointmentStart), end: formatTime(load.appointmentEnd) })}
           </p>
           {pay ? (
             <p className="text-sm">
-              Expected earnings <span className="font-semibold">{money(pay.expected)}</span>
-              <span className="mt-0.5 block text-xs text-[#5c6b80]">{pay.detail}</span>
+              {d.expected} <span className="font-semibold">{money(pay.expected)}</span>
+              <span className="mt-0.5 block text-xs text-[#5c6b80]">
+                {pay.lines.map((line) => `${earningMemo(lang, line.memo)} · ${line.posted ? c.load.posted : c.load.notPosted}`).join(" · ")}
+              </span>
             </p>
           ) : null}
           {load.delays.length ? (
             <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
-              Delay reported · {DELAY_LABEL[load.delays.at(-1)!.reason]}
+              {fill(d.delayReported, { reason: c.delay[load.delays.at(-1)!.reason] })}
             </p>
           ) : null}
           {showEmpty ? <EmptyReturn load={load} /> : null}
@@ -124,30 +144,31 @@ function Today({ onJump }: { onJump: (tab: Tab) => void }) {
               className="h-12 w-full text-base"
               onClick={() => {
                 const result = demo.driverAction(load.id, action.action);
-                if (!result.ok) toast.error(result.reason);
-                else toast.success(action.label);
+                const label = actionText(lang, load, action.action);
+                if (!result.ok) toast.error(text(result.reason));
+                else toast.success(label);
               }}
             >
-              {action.label}
+              {actionText(lang, load, action.action)}
             </Button>
           ) : (
-            <p className="text-sm text-emerald-800">This move is complete.</p>
+            <p className="text-sm text-emerald-800">{d.complete}</p>
           )}
           <div className="grid grid-cols-3 gap-2">
             <Button variant="outline" size="sm" onClick={() => setDelayOpen(true)}>
-              Report delay
+              {d.reportDelay}
             </Button>
             <Button data-tour="add-expense" variant="outline" size="sm" onClick={() => setExpenseOpen(true)}>
-              Add expense
+              {d.addExpense}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setPodOpen(true)} disabled={load.type === "import" && !reached(load, "at_customer")}>
-              {load.type === "import" ? "Upload POD" : "Upload doc"}
+              {load.type === "import" ? d.uploadPod : d.uploadDoc}
             </Button>
           </div>
         </article>
       )}
       <button className="text-sm text-[#1d6fe8]" onClick={() => onJump("loads")}>
-        See all of your loads
+        {d.seeAll}
       </button>
       <DelaySheet open={delayOpen} onOpenChange={setDelayOpen} loadId={load?.id} />
       <ExpenseSheet open={expenseOpen} onOpenChange={setExpenseOpen} driverId={driver.id} loadId={load?.id} truckId={load?.truckId ?? truck?.id} />
@@ -157,15 +178,17 @@ function Today({ onJump }: { onJump: (tab: Tab) => void }) {
 }
 
 function EmptyReturn({ load }: { load: Load }) {
+  const { c } = useI18n();
+  const d = c.driverApp;
   const returned = reached(load, "empty_returned");
   return (
     <div data-tour="empty-return" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-      <p className="font-semibold text-amber-950">Empty return {returned ? "recorded" : "still required"}</p>
+      <p className="font-semibold text-amber-950">{returned ? d.emptyRecorded : d.emptyRequired}</p>
       <p className="mt-1 text-amber-950">
-        Delivery and the empty return are separate. Bring {load.containerNumber} back to {place(load.pickupKey)?.name}.
+        {fill(d.emptyBody, { container: load.containerNumber, place: place(load.pickupKey)?.name ?? "" })}
       </p>
       <p className="mt-1 text-xs text-amber-900">
-        Deadline {load.emptyReturnDeadline ? formatDate(`${load.emptyReturnDeadline}T12:00:00-07:00`) : "not set"}
+        {load.emptyReturnDeadline ? fill(d.deadline, { date: formatDate(`${load.emptyReturnDeadline}T12:00:00-07:00`) }) : d.deadlineMissing}
       </p>
     </div>
   );
@@ -182,6 +205,8 @@ function Stop({ label, name, address }: { label: string; name?: string; address?
 }
 
 function DelaySheet({ open, onOpenChange, loadId }: { open: boolean; onOpenChange: (open: boolean) => void; loadId?: string }) {
+  const { c, text } = useI18n();
+  const d = c.driverApp;
   const reportDelay = useDemo((state) => state.reportDelay);
   const [reason, setReason] = useState<DelayReason>("port_congestion");
   const [note, setNote] = useState("");
@@ -189,16 +214,16 @@ function DelaySheet({ open, onOpenChange, loadId }: { open: boolean; onOpenChang
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Report a delay</SheetTitle>
+          <SheetTitle>{d.reportTitle}</SheetTitle>
         </SheetHeader>
         <div className="space-y-2 px-4">
           {DELAY_OPTIONS.map((item) => (
             <label key={item} className="flex items-center gap-2 text-sm">
               <input type="radio" name="delay" checked={reason === item} onChange={() => setReason(item)} />
-              {DELAY_LABEL[item]}
+              {c.delay[item]}
             </label>
           ))}
-          <Label htmlFor="delay-note">What happened</Label>
+          <Label htmlFor="delay-note">{d.whatHappened}</Label>
           <Textarea id="delay-note" value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
         </div>
         <SheetFooter>
@@ -207,15 +232,15 @@ function DelaySheet({ open, onOpenChange, loadId }: { open: boolean; onOpenChang
               if (!loadId) return;
               const result = reportDelay(loadId, reason, note);
               if (!result.ok) {
-                toast.error(result.reason);
+                toast.error(text(result.reason));
                 return;
               }
-              toast.success("Delay reported");
+              toast.success(d.delayToast);
               setNote("");
               onOpenChange(false);
             }}
           >
-            Submit delay
+            {d.submitDelay}
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -234,6 +259,8 @@ function PodSheet({
   load?: Load;
   driverName: string;
 }) {
+  const { c, text } = useI18n();
+  const d = c.driverApp;
   const addDocument = useDemo((state) => state.addDocument);
   const documents = useDemo((state) => state.documents);
   const docs = documents.filter((doc) => doc.loadId === load?.id && (doc.type === "pod" || doc.type === "gate_receipt"));
@@ -243,7 +270,7 @@ function PodSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{load.type === "import" ? "Upload blue POD" : "Upload gate receipt"}</SheetTitle>
+          <SheetTitle>{load.type === "import" ? d.uploadBlue : d.uploadGate}</SheetTitle>
         </SheetHeader>
         <div className="space-y-3 px-4">
           <div className="flex flex-wrap gap-2">
@@ -273,15 +300,15 @@ function PodSheet({
                     },
                   },
                 });
-                if (!result.ok) toast.error(result.reason);
-                else toast.success("Document sent for review");
+                if (!result.ok) toast.error(text(result.reason));
+                else toast.success(d.sent);
               }}
             >
-              {load.type === "import" ? "Use sample blue POD" : "Use sample gate receipt"}
+              {load.type === "import" ? d.useBlue : d.useGate}
             </Button>
             <Button size="sm" variant="outline" asChild>
               <label>
-                Choose file
+                {d.chooseFile}
                 <input
                   className="sr-only"
                   type="file"
@@ -299,20 +326,20 @@ function PodSheet({
                         type,
                         attachment: { fileName: file.name, mimeType: file.type || "application/octet-stream", blobId, isSample: false },
                       });
-                      if (!result.ok) toast.error(result.reason);
-                      else toast.success("Document sent for review");
+                      if (!result.ok) toast.error(text(result.reason));
+                      else toast.success(d.sent);
                     })();
                   }}
                 />
               </label>
             </Button>
           </div>
-          <p className="text-xs text-[#5c6b80]">The sample blue document is marked synthetic. It is not a real proof of delivery.</p>
+          <p className="text-xs text-[#5c6b80]">{d.sampleNote}</p>
           {docs.map((doc) => (
             <div key={doc.id} className="space-y-2 rounded-md border p-2">
               <div className="flex items-center justify-between text-xs">
                 <span>{doc.fileName}</span>
-                <TonePill tone={doc.reviewStatus === "approved" ? "ok" : doc.reviewStatus === "rejected" ? "late" : "warn"}>{doc.reviewStatus}</TonePill>
+                <TonePill tone={doc.reviewStatus === "approved" ? "ok" : doc.reviewStatus === "rejected" ? "late" : "warn"}>{c.review[doc.reviewStatus]}</TonePill>
               </div>
               <DocumentPreview doc={doc} />
             </div>
@@ -324,6 +351,8 @@ function PodSheet({
 }
 
 function MyLoads() {
+  const { c } = useI18n();
+  const d = c.driverApp;
   const demo = useDemo();
   const mine = demo.loads.filter((load) => load.driverId === demo.actingDriverId);
   const groups = [
@@ -334,11 +363,11 @@ function MyLoads() {
   const now = groups[0].loads.filter((load) => !["assigned", "accepted"].includes(load.status));
   return (
     <div className="space-y-4 p-3">
-      <h1 className="text-lg font-semibold">My loads</h1>
-      <Section title="In progress" loads={now} />
-      <Section title="Accepted or assigned" loads={groups[1].loads} />
-      <Section title="Completed" loads={groups[2].loads} />
-      {mine.length === 0 ? <p className="text-sm text-[#5c6b80]">No loads yet.</p> : null}
+      <h1 className="text-lg font-semibold">{d.myLoads}</h1>
+      <Section title={d.inProgress} loads={now} />
+      <Section title={d.accepted} loads={groups[1].loads} />
+      <Section title={d.done} loads={groups[2].loads} />
+      {mine.length === 0 ? <p className="text-sm text-[#5c6b80]">{d.noLoads}</p> : null}
     </div>
   );
 }
@@ -366,6 +395,8 @@ function Section({ title, loads }: { title: string; loads: Load[] }) {
 }
 
 function MyExpenses() {
+  const { c, text } = useI18n();
+  const d = c.driverApp;
   const demo = useDemo();
   const [open, setOpen] = useState(false);
   const driver = demo.drivers.find((item) => item.id === demo.actingDriverId);
@@ -374,13 +405,13 @@ function MyExpenses() {
   return (
     <div className="space-y-3 p-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Expenses</h1>
+        <h1 className="text-lg font-semibold">{d.expenses}</h1>
         <Button size="sm" disabled={!load} onClick={() => setOpen(true)}>
-          Add
+          {c.add}
         </Button>
       </div>
-      {!load ? <p className="text-xs text-[#5c6b80]">Add an expense when you have an active load.</p> : null}
-      {rows.length === 0 ? <p className="text-sm text-[#5c6b80]">No expenses yet.</p> : null}
+      {!load ? <p className="text-xs text-[#5c6b80]">{d.addWhenActive}</p> : null}
+      {rows.length === 0 ? <p className="text-sm text-[#5c6b80]">{d.noExpenses}</p> : null}
       {rows.map((expense) => (
         <div key={expense.id} className="rounded-lg border p-2 text-sm">
           <div className="flex justify-between gap-2">
@@ -388,11 +419,11 @@ function MyExpenses() {
             <p>{money(expense.amount)}</p>
           </div>
           <p className="text-xs text-[#5c6b80]">
-            {expense.loadId} · {EXPENSE_STATUS_LABEL[expense.status]}
-            {expense.paidBy === "driver" && expense.reimbursementRequested ? " · reimbursement requested" : ""}
+            {expense.loadId} · {c.expenseStatus[expense.status]}
+            {expense.paidBy === "driver" && expense.reimbursementRequested ? ` · ${d.reimburseRequested}` : ""}
           </p>
-          {expense.rejectionReason ? <p className="mt-1 text-xs text-red-700">{expense.rejectionReason}</p> : null}
-          {expense.correctionNote ? <p className="mt-1 text-xs text-amber-800">{expense.correctionNote}</p> : null}
+          {expense.rejectionReason ? <p className="mt-1 text-xs text-red-700">{text(expense.rejectionReason)}</p> : null}
+          {expense.correctionNote ? <p className="mt-1 text-xs text-amber-800">{text(expense.correctionNote)}</p> : null}
           {expense.status === "correction_requested" ? (
             <Button
               size="sm"
@@ -400,11 +431,11 @@ function MyExpenses() {
               className="mt-2"
               onClick={() => {
                 const result = demo.resubmitExpense(expense.id);
-                if (!result.ok) toast.error(result.reason);
-                else toast.success("Sent back for approval");
+                if (!result.ok) toast.error(text(result.reason));
+                else toast.success(d.resubmitted);
               }}
             >
-              Resubmit
+              {d.resubmit}
             </Button>
           ) : null}
         </div>
@@ -417,6 +448,8 @@ function MyExpenses() {
 }
 
 function Earnings() {
+  const { c, lang } = useI18n();
+  const d = c.driverApp;
   const demo = useDemo();
   const driver = demo.drivers.find((item) => item.id === demo.actingDriverId);
   if (!driver) return null;
@@ -424,15 +457,15 @@ function Earnings() {
   const balance = driverBalance(demo.ledger, driver.id);
   return (
     <div className="space-y-3 p-3">
-      <h1 className="text-lg font-semibold">Earnings</h1>
+      <h1 className="text-lg font-semibold">{d.earnings}</h1>
       <p className="text-3xl font-semibold tabular-nums">{money(balance)}</p>
-      <p className="text-xs text-[#5c6b80]">Outstanding balance. Opening + earned pay + approved reimbursements + adjustments − advances − payments.</p>
+      <p className="text-xs text-[#5c6b80]">{d.outstanding}</p>
       <div className="space-y-2">
         {lines.map((entry) => (
           <div key={entry.id} className="flex items-start justify-between gap-3 border-b py-1.5 text-sm">
             <div>
-              <p className="capitalize">{entry.type}</p>
-              <p className="text-xs text-[#5c6b80]">{entry.memo}</p>
+              <p>{c.ledger[entry.type]}</p>
+              <p className="text-xs text-[#5c6b80]">{localizeMemo(lang, entry.memo)}</p>
             </div>
             <p className={entry.amount < 0 ? "text-red-700" : "text-emerald-800"}>{money(entry.amount)}</p>
           </div>
@@ -443,6 +476,8 @@ function Earnings() {
 }
 
 function Profile() {
+  const { c, lang, text } = useI18n();
+  const d = c.driverApp;
   const demo = useDemo();
   const driver = demo.drivers.find((item) => item.id === demo.actingDriverId);
   const truck = demo.trucks.find((item) => item.id === driver?.truckId);
@@ -452,10 +487,11 @@ function Profile() {
       <h1 className="text-lg font-semibold">{driver.name}</h1>
       <p>{driver.phone}</p>
       <p className="text-[#5c6b80]">{driver.email}</p>
-      <p>Truck {truck ? truck.unit : "not assigned"}</p>
-      <p>CDL {driver.cdl}</p>
-      <p>Home terminal · Oakland</p>
-      <p className="rounded-lg bg-[#f4f6f9] p-3 text-[#3d4d63]">{payRuleDetail(driver.pay)}</p>
+      <p>{truck ? fill(d.truckLine, { unit: truck.unit }) : d.truckMissing}</p>
+      {truck ? <UnitFigures truck={truck} variant="card" /> : null}
+      <p>{fill(d.cdl, { value: text(driver.cdl) })}</p>
+      <p>{d.terminal}</p>
+      <p className="rounded-lg bg-[#f4f6f9] p-3 text-[#3d4d63]">{payRuleDetail(driver.pay, lang)}</p>
     </div>
   );
 }
