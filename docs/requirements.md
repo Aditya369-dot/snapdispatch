@@ -20,8 +20,8 @@ Source is the production brief for this effort. The list is short on purpose.
 
 **Customer-confirmed** repository facts, not operating rules:
 
-- `main` at `711d566` is the pitch prototype: Zustand, `localStorage`, IndexedDB, no API, no auth, no database. GitHub `Aditya369-dot/snapdispatch` is the source of truth for that code.
-- The production audit is open [PR #2](https://github.com/Aditya369-dot/snapdispatch/pull/2) and is not on `main`.
+- GitHub `Aditya369-dot/snapdispatch` `main` is `e1e6e8a`. That commit squash-merged the audit onto the pitch prototype. The application is still Zustand, `localStorage`, IndexedDB, no API, no auth, and no database.
+- The production audit is [docs/production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) on `main`, squash-merged from [PR #2](https://github.com/Aditya369-dot/snapdispatch/pull/2) at `e1e6e8a`.
 
 ### Not customer-confirmed
 

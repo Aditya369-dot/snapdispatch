@@ -24,6 +24,7 @@ Planning docs for the first customer workflow. Application code is unchanged. Gi
 6. [api/v1-m1.md](./api/v1-m1.md) — draft HTTP contract.
 7. [schema/m1-draft.sql](./schema/m1-draft.sql) — draft Postgres schema. Not a migration.
 8. [fixtures/m1-synthetic.md](./fixtures/m1-synthetic.md) and [fixtures/m1-synthetic.json](./fixtures/m1-synthetic.json) — synthetic staging roster.
+9. [production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) — current-state audit, on `main`.
 
 ## First workflow
 
@@ -33,11 +34,9 @@ Assignment visibility is the first checkpoint. It is not the end of the workflow
 
 ## Audit
 
-[PR #2](https://github.com/Aditya369-dot/snapdispatch/pull/2) (`cursor/production-audit-5b5a`, commit `4bbe43f`) adds `docs/production-audit.md`. That file is not on `main` (`711d566`) and is not copied onto this branch.
+[docs/production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) is on `main`. [PR #2](https://github.com/Aditya369-dot/snapdispatch/pull/2) squash-merged it as `e1e6e8a` (“Add the SnapDispatch production-transition audit”).
 
-https://github.com/Aditya369-dot/snapdispatch/blob/cursor/production-audit-5b5a/docs/production-audit.md
-
-Use the audit for the current-state assessment and the keep-or-replace list. Timestamp guidance for the build is in these docs: store UTC, and use the customer-configured timezone for input, display, and the business day. The audit records that the pitch stamps a fixed `-07:00`.
+Use that file for the current-state assessment and the keep-or-replace list. Its timestamp recommendation matches these docs: store event timestamps in UTC, and use a customer-configured timezone for input, display, and business-day calculations. The pitch stamps a fixed `-07:00`. Do not copy that offset forward.
 
 ## Index
 
@@ -52,6 +51,7 @@ Use the audit for the current-state assessment and the keep-or-replace list. Tim
 | [schema/m1-draft.sql](./schema/m1-draft.sql) | Draft schema |
 | [fixtures/m1-synthetic.md](./fixtures/m1-synthetic.md) | How to use the synthetic roster |
 | [fixtures/m1-synthetic.json](./fixtures/m1-synthetic.json) | Synthetic org, people, truck, load |
+| [production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) | Audit on `main` at `e1e6e8a` |
 
 ## What the repo is today
 

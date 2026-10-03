@@ -4,7 +4,7 @@
 
 **Workflow requirement.** The first complete workflow needs real auth, organization and driver access restrictions, server-side validation, and durable private file storage. Financial calculations stay provisional until pay rules are customer-confirmed. See [requirements.md](./requirements.md).
 
-**Pitch default.** The app on `main` is Zustand plus IndexedDB, with no login and with fictional Westshore data. See the root [README](../README.md). GitHub [`Aditya369-dot/snapdispatch`](https://github.com/Aditya369-dot/snapdispatch) is the source of truth. The audit linked from [docs/README.md](./README.md) is the current-state write-up (open PR #2, not on `main`).
+**Pitch default.** The app on `main` is Zustand plus IndexedDB, with no login and with fictional Westshore data. See the root [README](../README.md). GitHub [`Aditya369-dot/snapdispatch`](https://github.com/Aditya369-dot/snapdispatch) is the source of truth. The current-state write-up is [docs/production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) on `main` (`e1e6e8a`, squash-merged from PR #2).
 
 ## Why one deploy
 
