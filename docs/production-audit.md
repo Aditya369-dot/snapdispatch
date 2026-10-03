@@ -15,11 +15,11 @@ Labels used below:
 
 **VERIFIED.** SnapDispatch is a Next.js App Router pitch prototype for a fictional Oakland carrier, Westshore Drayage. `README.md` says there is no login, database, payment processor, or GPS account, that tracking and Excel sync are simulated, and that edits stay in the browser until demo reset. The code matches that description.
 
-**VERIFIED.** GitHub `Aditya369-dot/snapdispatch` is public. Local `main` matches `origin/main` at `711d566` (“Add Spanish/English toggle and per-truck date, gallons, miles, expenses”), on top of `4bb2d8b` (“Initial SnapDispatch pitch prototype”). `gh repo view` reported `updatedAt` `2026-10-02T21:14:46Z`.
+**VERIFIED.** On 2026-10-03 the GitHub remote named `origin` was compared by SHA. Local `main` and `origin/main` are the same commit `711d566d8d060a9a276cc752aba6c386d82bad78` (“Add Spanish/English toggle and per-truck date, gallons, miles, expenses”). Its parent on that remote is `4bb2d8b` (“Initial SnapDispatch pitch prototype”). `gh repo view Aditya369-dot/snapdispatch` reported the repo public and `updatedAt` `2026-10-02T21:14:46Z`. That comparison covers GitHub only.
 
-**OBSERVATION.** A leftover GitHub branch `cursor/es-toggle-unit-costs-687a` is not contained in `main`. It has two commits (`acafe21`, `593a0b1`) that `main` does not, while `main` has the squashed-style commit `711d566` instead. That is branch drift inside GitHub, not a second product.
+**OBSERVATION.** Inside that same GitHub repo, `origin/cursor/es-toggle-unit-costs-687a` was at `593a0b1e820aecb0ae80e19e873a719334fa8f1a`. `git merge-base --is-ancestor` of that SHA against `711d566` was false. Commits reachable from the branch and not from `main`: `593a0b1`, `acafe21`. Commits reachable from `main` and not from the branch: `711d566`. That is GitHub branch history with unique commits on each side. It is not a comparison to Origin.
 
-**ASSUMPTION.** Origin `aditya-b/snapdispatch` could not be compared. The Origin CLI on this machine returned “Not authenticated” and no Origin token was available, so a commit-for-commit diff was not run. Treat Origin divergence as unknown until someone with access diffs the two remotes.
+**ASSUMPTION.** Origin repository `aditya-b/snapdispatch` was not compared. The Origin CLI returned “Not authenticated,” and no Origin HEAD SHA or commit list was retrieved. Match, mismatch, and divergence between Origin and GitHub are all unproven. If those HEADs later differ, call that a repository mismatch until commit history proves ancestry.
 
 **VERIFIED.** `https://snapdispatch.vercel.app/` responded `200` with `server: Vercel`, `x-nextjs-prerender: 1`, and `x-vercel-cache: HIT` (age about 25 hours at fetch time). The HTML title is `SnapDispatch · Westshore Drayage` and the splash text is `Opening Westshore Drayage`, the same strings as `app/layout.tsx` and `lib/i18n/copy.ts`. That is strong evidence the public site is this client shell. It is not a byte-for-byte proof of the deployed commit.
 
@@ -100,7 +100,7 @@ Domain logic lives in `lib/`, not in route handlers:
 
 **VERIFIED.** Identifiers are fictional: phones are `(510) 555-…`, emails are `@westshore.example`, VINs look like `1WS…DEMO…`, and `lib/reference.ts` uses MC `948221` and USDOT `3122488` next to a 555 company phone. Places are real Oakland-area terminal and warehouse addresses used as map scenery, with hand-placed `x`/`y` coordinates.
 
-**OBSERVATION.** The demo clock is frozen. `lib/format.ts` sets `DEMO_NOW` to `2026-10-01T09:40:00-07:00`. Each mutation in `lib/store.ts` advances that clock by one minute. “Today” on the overview uses the constant `DEMO_DAY`, not the wall clock. New loads created in the dialog also stamp `-07:00`.
+**OBSERVATION.** The demo clock is frozen. `lib/format.ts` sets `DEMO_NOW` to `2026-10-01T09:40:00-07:00`. Each mutation in `lib/store.ts` advances that clock by one minute. “Today” on the overview uses the constant `DEMO_DAY`, not the wall clock. `toPacificIso` formats a Pacific wall time and always appends `-07:00`. New loads created in the dialog also stamp `-07:00`. That offset is prototype behavior, not a production timestamp rule.
 
 ### State and persistence
 
@@ -200,7 +200,7 @@ The pitch path itself is coherent: walkthrough steps in `lib/walkthrough.ts` ass
 | Excel page | Refactor later into an export | Download of the same rows is useful. `simulateExcelSync` writes a local stamp and sends nothing. There is no import. |
 | `xlsx` on npm `0.18.5` | Replace before any untrusted parse | Write-only use is limited risk. The audit has no fix in this package line. A CSV export is enough for the first pilot. |
 | Client-only validation and the 400ms hydration shortcut | Replace | Rules move server-side. Sessions should wait for the server, not for a timer. |
-| Frozen demo clock and hardcoded `-07:00` | Replace | Store real timestamps in `America/Los_Angeles` only if the customer confirms that zone. `toPacificIso` always appends `-07:00`, which is wrong after Pacific Standard Time begins. |
+| Frozen demo clock and hardcoded `-07:00` | Replace | **OBSERVATION:** the prototype freezes the clock, and `toPacificIso` always appends `-07:00`. **RECOMMENDATION:** store event timestamps in UTC. Use a customer-configured timezone for input, display, and business-day calculations. Do not hardcode `America/Los_Angeles` or a fixed offset. |
 | Settlement boolean and “record payment” | Replace in M4 | A period, a snapshotted amount, and a recorded payout method. Still not a bank integration unless they ask. |
 | Customer invoicing | Not in the product today | Add only after the customer says billing means accounts receivable. |
 | Brokerage, BorderConnect, ACE/ACI, RTS, IFTA, OCR | Leave out | Out of scope for the first customer. The expense form already has a camera photo; that is not OCR. |
@@ -214,8 +214,8 @@ Reasons:
 - The product surface is one dispatcher UI and one driver UI over one company. A network of services would add failure modes a ten-truck fleet will not use.
 - Next.js is already the UI, and it can host typed route handlers or server actions beside the domain modules. The current pages are client components, so the first milestone adds a server write path without throwing away the screens.
 - The rules worth saving (`lib/flow.ts`, `lib/finance.ts`) are pure TypeScript. They should run on the server in the same transaction as the row write. The React components should display the result, not be the authority.
-- Managed Postgres gives one system of record, backups, and row security. Supabase Auth plus private Storage fits that database without a second vendor for login and files, provided the customer accepts email login or brings an SMS vendor.
-- The public pitch site can keep today’s Zustand demo. The pilot should be a separate deployment with real auth. Do not migrate Westshore fiction into the customer’s database, and do not put the customer’s loads on `snapdispatch.vercel.app`.
+- Managed Postgres gives one system of record and row security. Supabase Auth plus private Storage fits that database without a second vendor for login and files, provided the customer accepts email login or brings an SMS vendor. Database backup and object-storage copies are a later pilot requirement. They are not implemented in this prototype.
+- The public pitch site can keep today’s Zustand demo. It may stay on Vercel Hobby only while it is non-customer, non-commercial pitch content with no real carrier data. The pilot is a separate deployment on a commercial-eligible plan, such as Vercel Pro, with real auth. Do not migrate Westshore fiction into the customer’s database, and do not put the customer’s loads on `snapdispatch.vercel.app`.
 
 Suggested shape, still one app:
 
@@ -224,6 +224,8 @@ Suggested shape, still one app:
 - Postgres tables — `organizations`, `profiles` (auth user, role `owner` or `driver`), `drivers`, `trucks`, `customers`, `places`, `loads`, `load_events`, `expenses`, `documents`, `ledger_entries`. Add `settlement_periods` in M4, not in M1.
 - Row security — every row carries `organization_id`. Owners read and write the org. Drivers select loads, expenses, and documents tied to their driver profile. Drivers do not assign loads and do not approve their own expenses.
 - Storage — a private bucket. The app stores the object path and metadata in `documents`. Reads go through a short-lived signed URL or an authorized route. Enforce type and size before upload. The service-role key stays on the server only.
+- Timestamps — **RECOMMENDATION:** store event timestamps in UTC. Use a customer-configured timezone for input, display, and business-day calculations. Do not hardcode a zone or a fixed offset such as `-07:00`.
+- Recovery — **RECOMMENDATION, not implemented:** before a pilot, backups must cover database records and uploaded receipts and POD files in object storage. A documented restore test must show that both a database row and a stored file can be recovered. Vendor backup features do not count as that test until someone runs it and writes down the result.
 - Client — the existing screens, reading from the server. Zustand may cache a screen. It must not be the copy that survives a new device.
 
 **ASSUMPTION.** The first customer is a single company. The schema should still have `organization_id` so a second carrier does not require a rewrite. The pilot does not need a self-serve signup flow.
@@ -240,7 +242,7 @@ Prices below were read from public pages on 2026-10-03. They are list prices, no
 
 **ASSUMPTION.** A pilot of about 10 trucks and under 30 people who sign in during a month stays inside Supabase Pro’s database, storage, egress, and auth quotas, and inside Vercel Pro’s `$20` credit, if photos are normal phone images and nobody turns on point-in-time recovery, extra seats, or phone MFA. Expected platform bill: about `$45` per month (`$25` Supabase Pro + `$20` Vercel Pro) before tax. Email magic links or passwords do not add an SMS bill. Phone OTP adds the SMS vendor on top, likely a few dollars to a few tens of dollars at a couple of messages per driver per work day, plus the number fee. Custom domains, error tracking, and email delivery (if auth mail should not come from Supabase’s default sender) are extra and were not priced here.
 
-**RECOMMENDATION.** Use Supabase Pro and Vercel Pro for the pilot so the database is not paused for inactivity and the hosting plan matches commercial use. Keep the fictional pitch on its current free or Hobby deployment, with no real data. Skip Team plan, PITR, SAML, and Advanced MFA Phone until a requirement appears.
+**RECOMMENDATION.** Any customer pilot or other commercial deployment uses a commercial-eligible host, for example Vercel Pro, plus Supabase Pro so the database is not paused for inactivity. Vercel Hobby is allowed only for a non-customer, non-commercial pitch that holds no real carrier data. The fictional Westshore demo may stay on Hobby under that limit. A paying customer, real carrier data, or other commercial use on that deployment requires Pro or Enterprise. This audit did not verify whether `snapdispatch.vercel.app` is currently Hobby or Pro. Skip Team plan, PITR, SAML, and Advanced MFA Phone until a requirement appears.
 
 ## 4. Implementation backlog
 
@@ -248,7 +250,7 @@ Work is ordered inside each milestone. Later milestones depend on the server-own
 
 ### M1 — Foundation and assignment
 
-1. Separate the pilot deployment from `https://snapdispatch.vercel.app/`. The pitch keeps Zustand.
+1. Separate the pilot deployment from `https://snapdispatch.vercel.app/`. The pitch keeps Zustand. The pilot host must be a commercial-eligible plan. Hobby is allowed only for the non-commercial fictional pitch with no real carrier data.
 2. Create the organization, profile, driver, truck, customer, place, and load tables, with `organization_id` and row security.
 3. Auth for one owner and one driver. Role lives in `profiles`, not in a header the browser can flip.
 4. Owner can create a load with the fields dispatch already collects, plus last free day or cutoff when the customer says those matter.
@@ -259,7 +261,7 @@ Work is ordered inside each milestone. Later milestones depend on the server-own
 ### M2 — Driver lifecycle
 
 1. Move `nextDriverAction` / `driverAction` to the server. One forward step. The driver on the load is the only caller.
-2. Persist the timeline as `load_events` with real timestamps.
+2. Persist the timeline as `load_events` with real timestamps stored in UTC. Display and business-day boundaries use the customer-configured timezone.
 3. Keep the single primary button, delay note, and the import empty-return stop.
 4. Decide offline behavior before building a queue. If the port has no signal, M2 grows a local outbox. If the yard can live with “submit when online,” do not build sync.
 5. Leave the schematic map as a status view. Do not add a GPS vendor in this milestone.
@@ -285,7 +287,7 @@ Work is ordered inside each milestone. Later milestones depend on the server-own
 1. Load the real fleet, drivers, pay rules, and customers into the pilot project. Keep fiction out.
 2. Remove the role switcher, walkthrough, and demo reset from the pilot build.
 3. Confirm Spanish on the driver phone if required.
-4. Backups are the Supabase Pro daily backups. Add an admin way to correct a bad status or a bad expense with an audit row.
+4. **RECOMMENDATION, not implemented.** Recovery must cover database records and uploaded receipts and POD files in object storage. Write the restore steps and run a documented restore test that brings back both a load row and a stored file. Supabase Pro’s published daily database backups are a vendor feature to use, not evidence that a restore has been tested, and they do not restore the file bucket by themselves. Add an admin way to correct a bad status or a bad expense with an audit row.
 5. Smoke-test two phones and one office browser on the real assignment, status, photo, and balance path.
 6. `npm run check` remains the seed test for the pitch. Add tests that call the server rules for assign, illegal status jumps, reimbursement reversal, and “driver A cannot read driver B.”
 
@@ -311,7 +313,7 @@ Each question blocks the decision named on it. The prototype’s behavior is not
 9. **Who may add drivers, trucks, and customers?** Blocks M1 scope. Without that CRUD, or a one-time data load by the implementer, the pilot cannot leave the fictional roster.
 10. **Which spreadsheet or accounting file must the export match?** Blocks M4’s columns. The Excel page is a generated view of the demo, not a sync to a Microsoft account, and nothing in the repo describes the customer’s real workbook.
 11. **Is Spanish required for drivers on the first day?** Blocks whether `lib/i18n` ships in the pilot or waits. The copy is already there.
-12. **Confirm the time zone and the terminal.** Blocks timestamp storage. The demo assumes `America/Los_Angeles` and stamps `-07:00`.
+12. **What timezone should the office see?** Blocks input, display, and business-day boundaries. It does not block the storage format. **RECOMMENDATION:** store events in UTC and apply a customer-configured timezone for those calculations. **OBSERVATION:** the prototype stamps `-07:00`. Do not copy that offset forward.
 13. **How long must PODs and receipts be kept, and may a customer ever see them?** Blocks storage retention and whether a customer login exists. Default recommendation until they answer: private to the company, no customer portal.
 14. **Is the pilot allowed to replace the morning dispatch sheet, or must it run beside it?** Blocks how strict M6 is. Beside-the-sheet is safer. Replacement requires the settlement and document checks in M5 to pass first.
 
@@ -334,6 +336,6 @@ Do not port expenses, the ledger, Excel, the map, the walkthrough, or the 40-loa
 7. The server, not the React button, rejects an out-of-service truck, an off driver, a complete load, and an appointment overlap. Those four cases already exist in `validateAssignment` and should be rechecked against the database.
 8. Reloading browser B after the assignment still shows it. Clearing site data on B and signing in again still shows it.
 9. No service-role key is present in client code or in the repository. Driver file uploads are not part of this step.
-10. The load uses a real `created_at` / `assigned_at`. It does not use `DEMO_NOW`.
+10. The load uses a real `created_at` / `assigned_at` stored in UTC. It does not use `DEMO_NOW` and does not append a hardcoded `-07:00`.
 
 When those ten checks pass, M1 can widen to real create-load fields and a short roster of the customer’s drivers and trucks. Until they pass, the rest of the backlog is design only.
