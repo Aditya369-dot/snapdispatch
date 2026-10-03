@@ -6,7 +6,7 @@ The owner board and the driver phone share one set of demo records. Assign a loa
 
 There is no login, database, payment processor, or GPS account. Tracking is simulated. Excel sync is simulated.
 
-Production-transition docs, including the first-workflow plan, live in [docs/README.md](docs/README.md). They do not change this prototype. That plan is a technical checkpoint on synthetic data. It is not a live pilot, and the draft schema is not a migration to apply.
+Production-transition docs, including the first-workflow plan, live in [docs/README.md](docs/README.md). The pitch on `/` is unchanged. A separate technical checkpoint lives at `/app` and is not a live pilot. Setup, synthetic accounts, and the two-browser walkthrough are in [docs/SETUP.md](docs/SETUP.md). Driver-pay calculations stay disabled.
 
 ## Run it
 
