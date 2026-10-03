@@ -8,7 +8,7 @@
     "start": "next start --hostname 0.0.0.0 --port 43123",
     "lint": "eslint",
     "check": "tsx scripts/check-demo.ts",
-    "test:pilot": "tsx --test --test-concurrency=1 tests/pilot/workflow.test.ts",
+    "test:pilot": "tsx --test --test-concurrency=1 tests/pilot/workflow.test.ts tests/pilot/staging.test.ts",
     "pilot:migrate": "tsx scripts/pilot-migrate.ts",
     "pilot:reset": "tsx scripts/pilot-reset.ts",
     "pilot:backup": "tsx scripts/pilot-backup.ts",

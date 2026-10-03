@@ -1,4 +1,5 @@
 import { clearSessionCookie, profileIdFromRequest, readUploadToken, sessionCookie, signSession } from "@/lib/pilot/auth";
+import { requestGrantsStagingAccess, stagingLockedResponse } from "@/lib/pilot/staging-access";
 import { PilotError, errorBody, toPilotError } from "@/lib/pilot/errors";
 import { withAdmin } from "@/lib/pilot/db";
 import {
@@ -73,6 +74,13 @@ async function requireProfile(request: Request): Promise<string> {
   return profileId;
 }
 
+/**
+ * Optional fallback. Staging does not require Supabase Auth users.
+ * Password sessions against pilot_credentials are the login path.
+ * This runs only after local login fails, and only when the anon key is set.
+ * The Auth user id must already equal profiles.id. Setting Supabase env vars
+ * does not create users.
+ */
 async function supabaseProfileId(email: string, password: string): Promise<string | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -94,6 +102,7 @@ async function supabaseProfileId(email: string, password: string): Promise<strin
 
 export async function pilotApi(request: Request): Promise<Response> {
   try {
+    if (!requestGrantsStagingAccess(request)) return stagingLockedResponse();
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "") || "/";
     const method = request.method.toUpperCase();

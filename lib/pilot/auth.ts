@@ -53,7 +53,8 @@ export function readSession(token: string | null | undefined): string | null {
 }
 
 export function sessionCookie(token: string): string {
-  const secure = process.env.SNAPDISPATCH_ENV === "production" ? "; Secure" : "";
+  const env = process.env.SNAPDISPATCH_ENV;
+  const secure = env === "production" || env === "staging" ? "; Secure" : "";
   return `sd_pilot=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${SESSION_SECONDS}${secure}`;
 }
 

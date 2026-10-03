@@ -7,6 +7,7 @@ import { closePool, getPool, withAdmin } from "@/lib/pilot/db";
 import { PilotError } from "@/lib/pilot/errors";
 import { migrate } from "@/lib/pilot/migrate";
 import { pilotApi } from "@/lib/pilot/router";
+import { fixturePassword } from "@/lib/pilot/fixture-password";
 import { assertResetAllowed, resetSyntheticData } from "@/lib/pilot/seed";
 import { objectStore, resetObjectStoreForTests } from "@/lib/pilot/storage";
 
@@ -129,6 +130,29 @@ describe("M1 technical workflow", { concurrency: 1 }, () => {
       (error) => error instanceof PilotError && error.code === "staging_refused",
     );
     process.env.SNAPDISPATCH_ENV = previous;
+  });
+
+  test("staging reset refuses an empty, short, or well-known fixture password", async () => {
+    const previousEnv = process.env.SNAPDISPATCH_ENV;
+    const previousPassword = process.env.PILOT_FIXTURE_PASSWORD;
+    try {
+      process.env.SNAPDISPATCH_ENV = "staging";
+      for (const password of ["", "   ", "short-password", "synthetic-dev-password"]) {
+        process.env.PILOT_FIXTURE_PASSWORD = password;
+        await assert.rejects(
+          () => resetSyntheticData(),
+          (error) => error instanceof PilotError && error.code === "staging_refused",
+        );
+      }
+      process.env.PILOT_FIXTURE_PASSWORD = "staging-unique-pass";
+      assert.equal(fixturePassword(), "staging-unique-pass");
+      const owner = await login("owner.m1@synthetic.example");
+      assert.ok(owner);
+    } finally {
+      process.env.SNAPDISPATCH_ENV = previousEnv;
+      if (previousPassword === undefined) delete process.env.PILOT_FIXTURE_PASSWORD;
+      else process.env.PILOT_FIXTURE_PASSWORD = previousPassword;
+    }
   });
 
   test("pitch role switcher remains, and pilot code does not run pay formulas", async () => {

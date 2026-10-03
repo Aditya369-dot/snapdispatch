@@ -31,7 +31,7 @@ Date: 2026-10-03. Technical workflow checkpoint. Not live-customer ready.
 
 None in that local run.
 
-Hosted two-device Supabase was not executed. No Supabase credentials are in this environment, and none were purchased. The local session and private directory are the path the tests run. [SETUP.md](./SETUP.md) lists what the project owner must set before a hosted demo.
+Hosted two-device Supabase was not executed. No Supabase credentials are in this environment, and none were purchased. The local session and private directory are the path the tests run. [SETUP.md](./SETUP.md) is the hosted walkthrough: password sessions on synthetic profiles (`sd_pilot`, `/app/login`), Supabase as Postgres and private Storage only, and a separate Vercel project. Setting Supabase env vars does not create users. `pilot:reset` hashes `PILOT_FIXTURE_PASSWORD` into `pilot_credentials`. Staging refuses an empty password, a password shorter than 16 characters, and the local development default. When `STAGING_ACCESS_CODE` is set, `/app` and `/api/v1` stay locked until unlock. The pitch on `/` stays open.
 
 ## Unresolved customer questions and assumed rules
 
