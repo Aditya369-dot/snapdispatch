@@ -45,10 +45,12 @@ const NAV = [
 ] as const;
 
 export function AppFrame({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const hydrated = useHydrated();
   const { c } = useI18n();
   const view = useDemo((state) => state.view);
   const [menu, setMenu] = useState(false);
+  if (pathname.startsWith("/app")) return <>{children}</>;
   if (!hydrated) {
     return (
       <div className="grid min-h-dvh place-items-center bg-[#0c2340] text-white">

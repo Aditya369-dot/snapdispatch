@@ -15,8 +15,28 @@ concurrency:
 
 jobs:
   verify:
-    name: Lint, check, and build
+    name: Lint, check, test, and build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: snapdispatch_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d snapdispatch_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SNAPDISPATCH_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/snapdispatch_test
+      PILOT_SESSION_SECRET: ci-session-secret-value
+      PILOT_STORAGE_DIR: /tmp/snapdispatch-pilot-storage
+      PILOT_FIXTURE_PASSWORD: synthetic-dev-password
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -35,6 +55,9 @@ jobs:
 
       - name: Check demo seed
         run: npm run check
+
+      - name: Pilot workflow tests
+        run: npm run test:pilot
 
       - name: Build
         run: npm run build

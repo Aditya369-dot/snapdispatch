@@ -53,6 +53,9 @@ Use that file for the current-state assessment and the keep-or-replace list. Its
 | [m1-plan.md](./m1-plan.md) | Technical workflow checkpoint. Not live-customer ready |
 | [api/v1-m1.md](./api/v1-m1.md) | API contract v1 |
 | [schema/m1-draft.sql](./schema/m1-draft.sql) | Draft schema. Not a migration. RLS, migration strategy, indexes, and status enums are unresolved |
+| [schema/m1-migration-notes.md](./schema/m1-migration-notes.md) | What the checkpoint migration applies, and which RLS and auth items stay open |
+| [SETUP.md](./SETUP.md) | Local Postgres or optional Supabase env, reset guard, two-browser walkthrough |
+| [m1-status.md](./m1-status.md) | Passed checks, and the customer questions this checkpoint does not close |
 | [fixtures/m1-synthetic.md](./fixtures/m1-synthetic.md) | Minimal roster, fleet scale, and second-organization isolation |
 | [fixtures/m1-synthetic.json](./fixtures/m1-synthetic.json) | Minimal synthetic org, people, trucks, and load |
 | [fixtures/m1-fleet.json](./fixtures/m1-fleet.json) | Larger synthetic fleet, at least 10 trucks |
@@ -61,6 +64,6 @@ Use that file for the current-state assessment and the keep-or-replace list. Its
 
 ## What the repo is today
 
-The app on `main` is a Next.js pitch prototype. One Zustand store (`lib/store.ts`) persists to `localStorage`. Uploaded bytes go to IndexedDB (`lib/files.ts`). There is no `app/api/`. The public pitch is described in the root [README](../README.md). Westshore Drayage and its pay figures are fictional.
+The public pitch is still the Next.js prototype described in the root [README](../README.md): one Zustand store (`lib/store.ts`) in `localStorage`, uploads in IndexedDB (`lib/files.ts`), and the role switcher. Westshore Drayage and its pay figures are fictional. The checkpoint adds `/app` and `/api/v1` beside that pitch. It does not replace it.
 
 The first-workflow docs from PR #4 are already on `main` (`d63db7b`). CI from PR #3 is already on `main` (`e9c7347`). Neither merge turns the prototype into a pilot. M1 stays a technical checkpoint until the pre-pilot gates in [requirements.md](./requirements.md) are resolved, and driver-pay calculations stay disabled until the customer confirms them.
