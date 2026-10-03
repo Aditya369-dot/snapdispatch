@@ -2,26 +2,28 @@
 
 **Proposed.** One modular monolith for the pilot. One Next.js TypeScript codebase, one deploy, one Postgres database. Server handlers own every write.
 
-**Workflow requirement.** The first complete workflow needs real auth, organization and driver access restrictions, server-side validation, and durable private file storage. Financial calculations stay provisional until pay rules are customer-confirmed. See [requirements.md](./requirements.md).
+**Workflow requirement.** The first complete workflow needs real auth, organization and driver access restrictions, server-side validation, and durable private file storage. Driver-pay calculations stay disabled until pay rules are customer-confirmed. Typed amounts only. No pay-formula table executes. See [requirements.md](./requirements.md).
 
-**Pitch default.** The app on `main` is Zustand plus IndexedDB, with no login and with fictional Westshore data. See the root [README](../README.md). GitHub [`Aditya369-dot/snapdispatch`](https://github.com/Aditya369-dot/snapdispatch) is the source of truth. The current-state write-up is [docs/production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) on `main` (`e1e6e8a`, squash-merged from PR #2).
+M1 in [m1-plan.md](./m1-plan.md) is a **technical workflow checkpoint**. It is not live-customer ready.
+
+**Pitch default.** The app on `main` is Zustand plus IndexedDB, with no login and with fictional Westshore data. See the root [README](../README.md). GitHub [`Aditya369-dot/snapdispatch`](https://github.com/Aditya369-dot/snapdispatch) is the source of truth. The current-state write-up is [docs/production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) on `main` (`e1e6e8a`, squash-merged from PR #2). The first-workflow docs are also on `main` ([PR #4](https://github.com/Aditya369-dot/snapdispatch/pull/4) at `d63db7b`). CI is on `main` ([PR #3](https://github.com/Aditya369-dot/snapdispatch/pull/3) at `e9c7347`).
 
 ## Why one deploy
 
 **Assumption.** The first pilot is a single carrier, about ten or more trucks, with an owner and drivers sharing one set of loads. A network of services would add failure modes that fleet will not use.
 
-`organization_id` is on every tenant row (**Proposed**, D1) so a second company later is a new row. The pilot has no self-serve signup.
+`organization_id` is on every tenant row (**Proposed**, D1) so a second company later is a new row. The pilot product default is still one company. [fixtures/m1-isolation.json](./fixtures/m1-isolation.json) loads a second synthetic organization only to test that a session cannot cross that boundary. The pilot has no self-serve signup.
 
 ## Pitch deploy and pilot deploy
 
 | | Pitch | Pilot |
 | --- | --- | --- |
 | Purpose | Sales walkthrough | Staging, then a later trial with real people |
-| Data | Westshore seed in the browser | Postgres. Staging uses [fixtures/m1-synthetic.json](./fixtures/m1-synthetic.json) only |
+| Data | Westshore seed in the browser | Postgres. Staging uses the minimal, fleet, and isolation fixtures in [fixtures/m1-synthetic.md](./fixtures/m1-synthetic.md). No real opening balances |
 | Auth | Role switcher in `components/app-frame.tsx` | Real sessions. Role on the server |
 | Files | IndexedDB `snapdispatch-demo` | Private object storage |
 | Host | `https://snapdispatch.vercel.app/` at the time of the audit | A different project. Customer loads do not go on the pitch host |
-| Money | `lib/finance.ts` demo math | Typed amounts only. No formula until Q4 and Q5 |
+| Money | `lib/finance.ts` demo math | Driver-pay calculations disabled. Typed amounts only. No pay-formula table executes until Q4 and Q5 |
 
 **Proposed.** Vercel for the app and Supabase for Postgres, Auth, and private Storage, if email magic link or password is acceptable (D4). Re-check the audit’s price notes before anyone buys a plan. Phone OTP adds an SMS vendor. The pitch can stay on its current hobby-style deploy because it holds no customer data.
 
@@ -56,7 +58,7 @@ Brokerage, customs (BorderConnect, ACE, ACI), IFTA, and RTS stay outside the mon
 | Dispatch | Yes | Create, assign, acknowledge | A mandatory empty-return state |
 | Progress | Yes | Append-only progress events and optional reported stage text | The pitch import/export chain as a constraint |
 | Files | Yes | Private receipt and POD objects, owner review | OCR, a customer portal, reimbursement posting |
-| Driver pay | Provisional | A place to show “not configured” | Any formula, including `FLAT_PAY` |
+| Driver pay | Disabled until Q4 | A place to show “not configured”. Typed amounts only | Any executing formula, including `FLAT_PAY`, and any pay-formula table |
 | Customer billing | No | — | Invoices, until Q6 |
 | Fleet care | No, except the out-of-service flag used at assign time | — | ELD, IFTA, service schedules |
 | Export | No | — | Simulated Excel sync |

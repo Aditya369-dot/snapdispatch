@@ -9,7 +9,7 @@ Four topics stay **Open**. Pitch screens are not customer confirmation:
 - What receipt approval means for money (questions 3 and 5).
 - Whether a container empty return is required (questions 2 and 8).
 
-The first workflow still includes progress updates, receipt and POD upload, and owner review. Those are capabilities. They do not close the four topics. Financial totals stay provisional until pay rules are customer-confirmed. See [requirements.md](./requirements.md).
+The first workflow still includes progress updates, receipt and POD upload, and owner review. Those are capabilities. They do not close the four topics. M1 is a technical workflow checkpoint, not live-customer ready. Driver-pay calculations stay disabled until pay rules are customer-confirmed. Typed amounts only. No pay-formula table executes. Load completion, cancellation, handoffs, and empty returns are open gates before a live pilot. See [requirements.md](./requirements.md).
 
 Two location ideas stay separate in every row:
 
@@ -63,7 +63,7 @@ Pay, the meaning of receipt approval, empty returns, receivables, and deadline w
 
 | | |
 | --- | --- |
-| Label | The owner will ask this. Formulas are **Open** (Q4, Q5, Q6). The workflow may store a typed customer rate and a typed receipt amount. Calculations are provisional: no earnings are posted. |
+| Label | The owner will ask this. Formulas are **Open** (Q4, Q5, Q6). The workflow may store a typed customer rate and a typed receipt amount. Driver-pay calculations are disabled: no earnings are posted, and no pay-formula table executes. |
 | Required data | Entered customer rate and any entered accessorials. The agreed driver-pay rule id and its inputs (Q4), once they exist. Approved operating expenses attached to the load (Q5). The rule text that produced the driver-cost figure. |
 | Responsible user | Owner enters the rate. Driver submits expenses after that module exists. Owner approves them. The server posts earnings from the agreed rule. |
 | Relevant screens | Pitch load Financials tab. Overview week chart and `/loads?revenue=week`. |

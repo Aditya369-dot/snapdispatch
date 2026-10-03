@@ -1,11 +1,44 @@
--- SnapDispatch first-workflow draft schema
--- Status: proposal. Not a migration. Do not apply to the pitch prototype.
--- Target: Postgres 15+ with Supabase Auth (auth.uid / auth.users) and a private storage bucket.
+-- =============================================================================
+-- DRAFT — DO NOT APPLY
+-- SnapDispatch M1 schema sketch. Not a migration. Not production-ready.
+-- =============================================================================
 --
--- Customer-confirmed pay rules, handoff chains, receipt-money effects, and empty-return
--- requirements are intentionally absent. See docs/requirements.md.
+-- This file is a draft illustration of a possible Postgres shape for the M1
+-- technical workflow checkpoint. It is not ready to apply as a migration.
+-- Do not run it against the pitch prototype, staging, or any customer database.
+-- There is no migration runner, no version number, and no rollback in this repo.
+--
+-- Unresolved implementation requirements (still open — do not treat the SQL
+-- below as the decision):
+--
+--   1. RLS policy details. The SELECT policies and security-definer functions
+--      later in this file are a sketch. Grants, FORCE ROW LEVEL SECURITY,
+--      storage-bucket policies, execute privileges, and whether writes stay
+--      inside these functions are not settled.
+--   2. Migration strategy. No ordered migrations, expand/contract plan, seed
+--      split, or apply/rollback procedure exists. Do not paste this file into
+--      a migration tool.
+--   3. Indexes TBD. The indexes near the bottom are illustrative only. Which
+--      indexes to keep waits on real query shapes. They are not a performance plan.
+--   4. Enum and status finalization after discovery. The text checks for
+--      status, event_type, and review_status are provisional workflow labels.
+--      Load completion, cancellation, the handoff/stage machine, and container
+--      empty returns are pre-pilot gates (docs/requirements.md). Do not freeze
+--      those labels into a Postgres enum.
+--
+-- Driver-pay calculations are DISABLED until the customer confirms Q4.
+-- No pay_rules table, no ledger, and no function in this file computes pay.
+-- loads.customer_rate_cents and documents.amount_cents are typed amounts only.
+-- Nothing multiplies them into earnings, contribution, or reimbursement.
+--
+-- Intended eventual target, once the items above are resolved: Postgres 15+
+-- with Supabase Auth (auth.uid / auth.users) and a private storage bucket.
+-- That target is a proposal (docs/architecture.md), not an instruction to apply
+-- this draft.
+--
 -- Store timestamps in UTC. display_timezone is the customer-configured IANA zone
 -- for input, display, and business-day math. It has no default of America/Los_Angeles.
+-- See docs/requirements.md and docs/m1-plan.md.
 
 -- ---------------------------------------------------------------------------
 -- Tables
@@ -82,6 +115,7 @@ create table profiles (
   )
 );
 
+-- Draft index. Indexes are TBD; this one is illustrative, not a migration.
 create unique index profiles_one_login_per_driver
   on profiles (organization_id, driver_id)
   where driver_id is not null;
@@ -100,10 +134,13 @@ create table loads (
   last_free_day date,
   empty_return_deadline date,
   cutoff timestamptz,
+  -- Draft labels only. Completion, cancellation, handoffs, and empty return
+  -- are not statuses in this checkpoint. Finalize after discovery; do not enum yet.
   status text not null default 'created',
   driver_id uuid references drivers (id),
   truck_id uuid references trucks (id),
-  -- Typed by the owner. No default. Do not derive driver pay from it.
+  -- Typed amount only. Driver-pay calculations are disabled until Q4.
+  -- No default. No formula reads this column.
   customer_rate_cents integer,
   notes text not null default '',
   acknowledged_at timestamptz,
@@ -125,7 +162,7 @@ create table loads (
 );
 
 comment on column loads.customer_rate_cents is
-  'Optional owner-entered amount in cents. Not a tariff and not a pay rule.';
+  'Optional owner-entered amount in cents. Typed amount only. Driver-pay calculations are disabled until the customer confirms Q4. Not a tariff and not a pay rule.';
 
 comment on column loads.empty_return_deadline is
   'Optional typed date. Empty return is not a required status in this schema.';
@@ -164,7 +201,7 @@ create table documents (
   byte_size integer not null,
   storage_bucket text not null,
   storage_path text not null,
-  -- Receipt only. What the driver typed. Review must not change it or post it to a ledger.
+  -- Receipt only. Typed amount. Review must not change it, compute pay, or post a ledger.
   amount_cents integer,
   upload_completed_at timestamptz,
   review_status text not null default 'pending',
@@ -186,14 +223,19 @@ create table documents (
 );
 
 comment on table documents is
-  'Metadata for a private object. Bytes are not stored in this table. Approval does not create a reimbursement.';
+  'Metadata for a private object. Bytes are not stored in this table. amount_cents is a typed amount only. Driver-pay calculations are disabled. Approval does not create a reimbursement.';
 
+-- Indexes TBD. The four statements below are an illustration, not a migration
+-- and not a performance commitment. Revisit after query shapes exist.
 create index loads_org_status_idx on loads (organization_id, status);
 create index loads_driver_idx on loads (organization_id, driver_id);
 create index load_events_load_idx on load_events (load_id, occurred_at);
 create index documents_load_idx on documents (load_id);
 
--- No ledger_entries, pay_rules, invoices, or empty-return state.
+-- Driver-pay calculations are DISABLED until the customer confirms Q4.
+-- No pay_rules table. No ledger_entries table. No function executes a pay formula.
+-- Typed amounts only (loads.customer_rate_cents, documents.amount_cents).
+-- No invoices table and no empty-return state.
 
 -- ---------------------------------------------------------------------------
 -- Caller
@@ -214,7 +256,8 @@ $$;
 revoke all on function app_current_profile() from public;
 
 -- ---------------------------------------------------------------------------
--- assign_load — owner, same org, no pay side effect
+-- assign_load — owner, same org.
+-- Driver-pay calculations are disabled. This function does not execute a pay formula.
 -- ---------------------------------------------------------------------------
 
 create or replace function assign_load(
@@ -623,9 +666,12 @@ $$;
 revoke all on function review_document(uuid, text, text) from public;
 
 -- ---------------------------------------------------------------------------
--- Row security
--- Clients may read. Status changes and reviews go through the functions above.
--- Drivers do not get an UPDATE policy on loads or documents.
+-- Row security — DRAFT SKETCH, not a policy set to apply
+-- Unresolved: grants, FORCE ROW LEVEL SECURITY, storage-bucket policies,
+-- function execute privileges, and whether these SELECT policies survive
+-- discovery. Clients may read in this sketch. Status changes and reviews go
+-- through the functions above. Drivers do not get an UPDATE policy on loads
+-- or documents in this sketch. Do not ship these policies as-is.
 -- ---------------------------------------------------------------------------
 
 alter table organizations enable row level security;
