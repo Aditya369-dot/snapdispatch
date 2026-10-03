@@ -11,9 +11,9 @@ Four items are easy to confuse with the prototype. They are **Open** until someo
 - Receipt approval. The demo path from “approved” to a reimbursement ledger line is not their policy.
 - Container empty returns. The demo step that keeps an import open until the empty is back is not their requirement.
 
-The first workflow can still upload a receipt and a POD and record an owner review. That capability does not answer those four. Pay math stays provisional until the three examples below are filed.
+The first workflow can still upload a receipt and a POD and record an owner review. That capability does not answer those four. Driver-pay calculations stay disabled until the three examples below are filed. No pay-formula table executes. Typed amounts only.
 
-The eight owner questions in [owner-questions.md](./owner-questions.md) are the reason these answers matter. M1 in [m1-plan.md](./m1-plan.md) does not wait on the financial and paperwork items.
+The eight owner questions in [owner-questions.md](./owner-questions.md) are the reason these answers matter. M1 in [m1-plan.md](./m1-plan.md) is a technical workflow checkpoint, not a live pilot. It does not wait on the financial and paperwork items, and it does not close the pre-pilot gates: load completion, cancellation, handoffs/stage machine, and container empty returns. Driver-pay calculations stay disabled until the three examples below are customer-confirmed.
 
 ## Freight type
 
@@ -41,7 +41,7 @@ The eight owner questions in [owner-questions.md](./owner-questions.md) are the 
 
 ## Driver pay
 
-**Open** until three real examples are filed. Until then, calculations stay provisional: typed amounts may be stored, and no formula ships. (Q4)
+**Open** until three real examples are filed. Until then, driver-pay calculations stay disabled: typed amounts may be stored, and no pay-formula table executes. (Q4)
 
 - [ ] Example A, with the source document (settlement line, text, or spreadsheet row).
 - [ ] Example B, a different shape if they have one (hourly, percentage, flat, per stop, layover).

@@ -1,6 +1,6 @@
 {
   "label": "SYNTHETIC",
-  "disclaimer": "Staging fixture only. Not a customer record and not the Westshore pitch seed. payRules and emptyReturnRequired are null because those rules are not customer-confirmed.",
+  "disclaimer": "Minimal staging fixture only. Not a customer record and not the Westshore pitch seed. payRules and emptyReturnRequired are null because driver-pay calculations are disabled and empty return is not a required step. Fleet scale is m1-fleet.json. Company isolation is m1-isolation.json.",
   "organization": {
     "name": "Synthetic Staging Carrier",
     "syntheticOnly": true,

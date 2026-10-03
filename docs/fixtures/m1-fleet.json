@@ -1,0 +1,308 @@
+{
+  "label": "SYNTHETIC",
+  "scenario": "larger-fleet",
+  "disclaimer": "Larger staging fleet. Not a customer record and not the Westshore pitch seed. At least 10 trucks, matching first-customer scale. payRules is null because driver-pay calculations are disabled. emptyReturnRequired is null because empty return is not a required step. Keep the minimal fixture in m1-synthetic.json. Company isolation is m1-isolation.json.",
+  "minimumTrucks": 10,
+  "organization": {
+    "name": "Synthetic Fleet Carrier",
+    "syntheticOnly": true,
+    "displayTimezone": "America/Chicago",
+    "displayTimezoneNote": "Fixture configuration so business-day tests have an IANA zone. Instants below are UTC. This is not the customer's confirmed zone."
+  },
+  "users": [
+    {
+      "key": "owner",
+      "email": "fleet.owner@synthetic.example",
+      "role": "owner",
+      "driverKey": null
+    },
+    {
+      "key": "driver01",
+      "email": "fleet.driver.01@synthetic.example",
+      "role": "driver",
+      "driverKey": "driver01"
+    },
+    {
+      "key": "driver02",
+      "email": "fleet.driver.02@synthetic.example",
+      "role": "driver",
+      "driverKey": "driver02"
+    }
+  ],
+  "drivers": [
+    {
+      "key": "driver01",
+      "displayName": "Synthetic Fleet Driver 01",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver02",
+      "displayName": "Synthetic Fleet Driver 02",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver03",
+      "displayName": "Synthetic Fleet Driver 03",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver04",
+      "displayName": "Synthetic Fleet Driver 04",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver05",
+      "displayName": "Synthetic Fleet Driver 05",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver06",
+      "displayName": "Synthetic Fleet Driver 06",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver07",
+      "displayName": "Synthetic Fleet Driver 07",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver08",
+      "displayName": "Synthetic Fleet Driver 08",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver09",
+      "displayName": "Synthetic Fleet Driver 09",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driver10",
+      "displayName": "Synthetic Fleet Driver 10",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driverOff",
+      "displayName": "Synthetic Fleet Driver Off",
+      "availability": "off",
+      "availabilityNote": "Fixture off-duty flag",
+      "payRule": null
+    }
+  ],
+  "trucks": [
+    {
+      "key": "truck01",
+      "unit": "SYN-F01",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck02",
+      "unit": "SYN-F02",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck03",
+      "unit": "SYN-F03",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck04",
+      "unit": "SYN-F04",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck05",
+      "unit": "SYN-F05",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck06",
+      "unit": "SYN-F06",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck07",
+      "unit": "SYN-F07",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck08",
+      "unit": "SYN-F08",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck09",
+      "unit": "SYN-F09",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck10",
+      "unit": "SYN-F10",
+      "operational": "in_service"
+    },
+    {
+      "key": "truck11",
+      "unit": "SYN-F11",
+      "operational": "in_service"
+    },
+    {
+      "key": "truckDown",
+      "unit": "SYN-F12",
+      "operational": "out_of_service"
+    }
+  ],
+  "customers": [
+    {
+      "key": "customerA",
+      "name": "Synthetic Fleet Customer A"
+    },
+    {
+      "key": "customerB",
+      "name": "Synthetic Fleet Customer B"
+    }
+  ],
+  "places": [
+    {
+      "key": "pickup",
+      "name": "Synthetic Fleet Pickup",
+      "addressLine": "10 Fixture Avenue"
+    },
+    {
+      "key": "drop",
+      "name": "Synthetic Fleet Drop",
+      "addressLine": "20 Fixture Avenue"
+    },
+    {
+      "key": "yard",
+      "name": "Synthetic Fleet Yard",
+      "addressLine": "30 Fixture Avenue"
+    },
+    {
+      "key": "gate",
+      "name": "Synthetic Fleet Gate",
+      "addressLine": "40 Fixture Avenue"
+    }
+  ],
+  "loads": [
+    {
+      "key": "loadOne",
+      "reference": "SYN-FLEET-001",
+      "containerNumber": null,
+      "externalReference": null,
+      "customerKey": "customerA",
+      "pickupKey": "pickup",
+      "destinationKey": "drop",
+      "appointmentStart": "2026-10-07T15:00:00Z",
+      "appointmentEnd": "2026-10-07T18:00:00Z",
+      "lastFreeDay": null,
+      "emptyReturnDeadline": null,
+      "cutoff": null,
+      "customerRateCents": null,
+      "notes": "Workflow load for the fleet-scale checkpoint. No pay formula."
+    },
+    {
+      "key": "loadTwo",
+      "reference": "SYN-FLEET-002",
+      "containerNumber": null,
+      "customerKey": "customerB",
+      "pickupKey": "yard",
+      "destinationKey": "gate",
+      "appointmentStart": "2026-10-07T20:00:00Z",
+      "appointmentEnd": "2026-10-07T22:00:00Z",
+      "customerRateCents": null,
+      "notes": "Second same-day load so the roster is not a single row. Assign driver02 and SYN-F02 if a test needs another active load. Not a pay scenario."
+    },
+    {
+      "key": "loadOverlap",
+      "reference": "SYN-FLEET-003",
+      "containerNumber": null,
+      "customerKey": "customerA",
+      "pickupKey": "pickup",
+      "destinationKey": "drop",
+      "appointmentStart": "2026-10-07T16:00:00Z",
+      "appointmentEnd": "2026-10-07T19:00:00Z",
+      "customerRateCents": null,
+      "notes": "Overlap case against SYN-FLEET-001. Do not leave both assigned to the same driver or truck."
+    }
+  ],
+  "payRules": null,
+  "emptyReturnRequired": null,
+  "workflowScript": [
+    {
+      "step": "assign",
+      "loadKey": "loadOne",
+      "driverKey": "driver01",
+      "truckKey": "truck01"
+    },
+    {
+      "step": "acknowledge",
+      "as": "driver01",
+      "loadKey": "loadOne"
+    },
+    {
+      "step": "progress",
+      "as": "driver01",
+      "loadKey": "loadOne",
+      "note": "At the fleet pickup door.",
+      "reportedStage": null
+    },
+    {
+      "step": "upload",
+      "as": "driver01",
+      "loadKey": "loadOne",
+      "kind": "receipt",
+      "fileName": "synthetic-fleet-receipt.jpg",
+      "mimeType": "image/jpeg",
+      "amountCents": 2400,
+      "amountNote": "Typed test amount. Not a pay rate and not a reimbursement rule. Driver-pay calculations stay disabled."
+    },
+    {
+      "step": "upload",
+      "as": "driver01",
+      "loadKey": "loadOne",
+      "kind": "pod",
+      "fileName": "synthetic-fleet-pod.pdf",
+      "mimeType": "application/pdf",
+      "amountCents": null
+    },
+    {
+      "step": "review",
+      "as": "owner",
+      "kind": "pod",
+      "decision": "approved",
+      "note": ""
+    },
+    {
+      "step": "review",
+      "as": "owner",
+      "kind": "receipt",
+      "decision": "rejected",
+      "note": "Fixture rejection on the fleet load. Must not create a ledger row or execute a pay formula."
+    }
+  ],
+  "negativeCases": [
+    {
+      "step": "assign",
+      "loadKey": "loadOne",
+      "driverKey": "driver01",
+      "truckKey": "truckDown",
+      "expectCode": "truck_out_of_service"
+    },
+    {
+      "step": "assign",
+      "loadKey": "loadOne",
+      "driverKey": "driverOff",
+      "truckKey": "truck01",
+      "expectCode": "driver_unavailable"
+    }
+  ]
+}

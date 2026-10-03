@@ -1,0 +1,203 @@
+{
+  "label": "SYNTHETIC",
+  "scenario": "company-isolation",
+  "disclaimer": "Two synthetic organizations for company-isolation tests. Not customer records and not the Westshore pitch seed. The second organization does not replace proposed default D1 (one company per pilot database). payRules is null because driver-pay calculations are disabled. emptyReturnRequired is null. Keep m1-synthetic.json and m1-fleet.json.",
+  "payRules": null,
+  "emptyReturnRequired": null,
+  "organizations": [
+    {
+      "key": "alpha",
+      "name": "Synthetic Isolation Alpha",
+      "syntheticOnly": true,
+      "displayTimezone": "America/Denver",
+      "displayTimezoneNote": "Fixture configuration. Instants below are UTC. This is not the customer's confirmed zone.",
+      "users": [
+        {
+          "key": "owner",
+          "email": "alpha.owner@synthetic.example",
+          "role": "owner",
+          "driverKey": null
+        },
+        {
+          "key": "driver",
+          "email": "alpha.driver@synthetic.example",
+          "role": "driver",
+          "driverKey": "driver"
+        }
+      ],
+      "drivers": [
+        {
+          "key": "driver",
+          "displayName": "Synthetic Isolation Alpha Driver",
+          "availability": "available",
+          "payRule": null
+        }
+      ],
+      "trucks": [
+        {
+          "key": "truck",
+          "unit": "SYN-A-01",
+          "operational": "in_service"
+        }
+      ],
+      "customer": {
+        "key": "customer",
+        "name": "Synthetic Alpha Customer"
+      },
+      "places": [
+        {
+          "key": "pickup",
+          "name": "Synthetic Alpha Pickup",
+          "addressLine": "1 Alpha Fixture Street"
+        },
+        {
+          "key": "drop",
+          "name": "Synthetic Alpha Drop",
+          "addressLine": "2 Alpha Fixture Street"
+        }
+      ],
+      "loads": [
+        {
+          "key": "loadOne",
+          "reference": "SYN-ISO-A-001",
+          "containerNumber": null,
+          "externalReference": null,
+          "customerKey": "customer",
+          "pickupKey": "pickup",
+          "destinationKey": "drop",
+          "appointmentStart": "2026-10-08T15:00:00Z",
+          "appointmentEnd": "2026-10-08T18:00:00Z",
+          "lastFreeDay": null,
+          "emptyReturnDeadline": null,
+          "cutoff": null,
+          "customerRateCents": null,
+          "notes": ""
+        }
+      ],
+      "payRules": null,
+      "emptyReturnRequired": null
+    },
+    {
+      "key": "bravo",
+      "name": "Synthetic Isolation Bravo",
+      "syntheticOnly": true,
+      "displayTimezone": "America/New_York",
+      "displayTimezoneNote": "Fixture configuration, different from Alpha so the zone is per organization. Instants below are UTC. This is not the customer's confirmed zone.",
+      "users": [
+        {
+          "key": "owner",
+          "email": "bravo.owner@synthetic.example",
+          "role": "owner",
+          "driverKey": null
+        },
+        {
+          "key": "driver",
+          "email": "bravo.driver@synthetic.example",
+          "role": "driver",
+          "driverKey": "driver"
+        }
+      ],
+      "drivers": [
+        {
+          "key": "driver",
+          "displayName": "Synthetic Isolation Bravo Driver",
+          "availability": "available",
+          "payRule": null
+        }
+      ],
+      "trucks": [
+        {
+          "key": "truck",
+          "unit": "SYN-B-01",
+          "operational": "in_service"
+        }
+      ],
+      "customer": {
+        "key": "customer",
+        "name": "Synthetic Bravo Customer"
+      },
+      "places": [
+        {
+          "key": "pickup",
+          "name": "Synthetic Bravo Pickup",
+          "addressLine": "1 Bravo Fixture Street"
+        },
+        {
+          "key": "drop",
+          "name": "Synthetic Bravo Drop",
+          "addressLine": "2 Bravo Fixture Street"
+        }
+      ],
+      "loads": [
+        {
+          "key": "loadOne",
+          "reference": "SYN-ISO-B-001",
+          "containerNumber": null,
+          "externalReference": null,
+          "customerKey": "customer",
+          "pickupKey": "pickup",
+          "destinationKey": "drop",
+          "appointmentStart": "2026-10-08T15:00:00Z",
+          "appointmentEnd": "2026-10-08T18:00:00Z",
+          "lastFreeDay": null,
+          "emptyReturnDeadline": null,
+          "cutoff": null,
+          "customerRateCents": null,
+          "notes": ""
+        }
+      ],
+      "payRules": null,
+      "emptyReturnRequired": null
+    }
+  ],
+  "isolationCases": [
+    {
+      "step": "listLoads",
+      "as": "alpha.owner",
+      "expectReferences": ["SYN-ISO-A-001"]
+    },
+    {
+      "step": "getLoad",
+      "as": "alpha.owner",
+      "organizationKey": "bravo",
+      "loadKey": "loadOne",
+      "expectCode": "not_found"
+    },
+    {
+      "step": "assign",
+      "as": "alpha.owner",
+      "loadOrganizationKey": "alpha",
+      "loadKey": "loadOne",
+      "driverOrganizationKey": "bravo",
+      "driverKey": "driver",
+      "truckOrganizationKey": "bravo",
+      "truckKey": "truck",
+      "expectCode": "not_found",
+      "expectNoWriteIn": "bravo"
+    },
+    {
+      "step": "getLoad",
+      "as": "bravo.driver",
+      "organizationKey": "alpha",
+      "loadKey": "loadOne",
+      "expectCode": "not_found"
+    },
+    {
+      "step": "getLoad",
+      "as": "alpha.driver",
+      "organizationKey": "bravo",
+      "loadKey": "loadOne",
+      "expectCode": "not_found"
+    },
+    {
+      "step": "listTrucks",
+      "as": "alpha.owner",
+      "expectUnits": ["SYN-A-01"]
+    },
+    {
+      "step": "listTrucks",
+      "as": "bravo.owner",
+      "expectUnits": ["SYN-B-01"]
+    }
+  ]
+}

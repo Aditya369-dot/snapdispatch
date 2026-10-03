@@ -8,6 +8,23 @@ Prototype behavior is a **Pitch default**. The Canada–US rate confirmation is 
 
 Question ids (Q1–Q18) are stable. [discovery-checklist.md](./discovery-checklist.md) is how they get answered.
 
+## M1 is a technical workflow checkpoint
+
+M1 in [m1-plan.md](./m1-plan.md) is a **technical workflow checkpoint** on synthetic staging data. It is **not live-customer ready**. Passing the acceptance checks does not authorize a live pilot. The draft schema in [schema/m1-draft.sql](./schema/m1-draft.sql) is not ready to apply as a migration.
+
+## Requirements to resolve before a live pilot
+
+These stay **Open**. They are not done in M1. A live pilot does not start while any row is still open.
+
+| Gate | Status | What M1 does instead |
+| --- | --- | --- |
+| Load completion definition | **Open** (Q3, Q17). When is the job complete? | No `complete` status. The checkpoint stops at progress, upload, and review. |
+| Cancellation | **Open**. Who may cancel, from which statuses, and what the assigned driver sees. | No cancel action and no cancelled status. |
+| Handoffs / stage machine | **Open** (Q3, Q17). Which stages are required, and who may advance them. | Append-only progress notes. The pitch import/export chain is not a constraint. |
+| Container empty returns | **Open** (Q3, Q18). Required handoff, a deadline, or absent. | Not a required step. A progress note may mention a return. That note does not change the rules. |
+
+**Driver-pay calculations are disabled** until Q4 is customer-confirmed. That disablement is also a gate on any live use of pay figures. No pay-formula table executes. The checkpoint may store typed amounts only.
+
 ## Customer-confirmed requirements
 
 Source is the production brief for this effort. The list is short on purpose.
@@ -20,7 +37,8 @@ Source is the production brief for this effort. The list is short on purpose.
 
 **Customer-confirmed** repository facts, not operating rules:
 
-- GitHub `Aditya369-dot/snapdispatch` `main` is `e1e6e8a`. That commit squash-merged the audit onto the pitch prototype. The application is still Zustand, `localStorage`, IndexedDB, no API, no auth, and no database.
+- [PR #4](https://github.com/Aditya369-dot/snapdispatch/pull/4) is merged on `main` at `d63db7b` (“Document the first-customer SnapDispatch workflow”). It is not an open pull request. [PR #3](https://github.com/Aditya369-dot/snapdispatch/pull/3) is merged on `main` at `e9c7347` (GitHub Actions CI: lint, demo check, and build). The production audit was squash-merged from [PR #2](https://github.com/Aditya369-dot/snapdispatch/pull/2) at `e1e6e8a`.
+- The application code is still the pitch prototype: Zustand, `localStorage`, IndexedDB, no API, no auth, and no database. These planning docs are on `main`. They do not implement the workflow, and CI does not apply [schema/m1-draft.sql](./schema/m1-draft.sql).
 - The production audit is [docs/production-audit.md](https://github.com/Aditya369-dot/snapdispatch/blob/main/docs/production-audit.md) on `main`, squash-merged from [PR #2](https://github.com/Aditya369-dot/snapdispatch/pull/2) at `e1e6e8a`.
 
 ### Not customer-confirmed
@@ -46,8 +64,8 @@ Source is the owner follow-up on this documentation. These bind the first build.
 4. **Server-side validation.** Assign, acknowledge, progress, upload, and review are enforced on the server. Client checks are not the authority.
 5. **Durable private file storage.** Receipt and POD bytes live in private object storage that survives a new device. The database stores the object key and metadata. Browser IndexedDB is not the system of record. Downloads are authorized and short-lived.
 6. **Timestamps.** Store every timestamp in UTC (`timestamptz`). Each organization has a customer-configured IANA timezone. That zone is used for typed input, for display, and for the business day (“today”, the appointment day). The pitch helper that always appends `-07:00` does not meet this rule. Which zone the customer selects is configuration (Q11). The storage and conversion rule is already decided.
-7. **Financial calculations stay provisional.** The workflow may store a rate or a receipt amount the user typed. It must not compute driver pay, contribution, or reimbursement until the customer confirms pay rules (Q4, Q5). Approving a receipt records the review. It does not post money.
-8. **Synthetic staging** is the data for this build. Real opening balances wait on Q9 and Q10.
+7. **Driver-pay calculations are disabled.** Until the customer confirms pay rules (Q4, Q5), no pay formula runs and no pay-formula table executes. The workflow may store a rate or a receipt amount the user typed. Typed amounts only. It must not compute driver pay, contribution, or reimbursement. Approving a receipt records the review. It does not post money.
+8. **Synthetic staging** is the data for this build. Use the minimal fixture, the larger fleet fixture (at least 10 trucks), and the second-organization isolation fixture in [fixtures/m1-synthetic.md](./fixtures/m1-synthetic.md). Real opening balances wait on Q9 and Q10.
 
 Progress updates are in the workflow. The stage names that count as a handoff are **Open**. Empty return is not a required step of this workflow. Receipt and POD upload plus owner review are in the workflow. The approval policy and any money effect are **Open**.
 
@@ -57,7 +75,7 @@ Reversible. They are not customer-confirmed. Replace them when the named questio
 
 | Id | Proposed default | Replaced by |
 | --- | --- | --- |
-| D1 | One company per pilot database. Every row carries `organization_id`. | A second-carrier requirement |
+| D1 | One company per pilot database. Every row carries `organization_id`. The second organization in [fixtures/m1-isolation.json](./fixtures/m1-isolation.json) is for company-isolation tests only. It is not a second carrier. | A second-carrier requirement |
 | D2 | Two deploys. The pitch site keeps Zustand and fictional data. The pilot is a separate host and database. | Q10 |
 | D3 | Modular monolith: this Next.js app, TypeScript server handlers, one Postgres database. | A constraint against Postgres or a single deploy |
 | D4 | Supabase Auth and private Storage if email magic link or password is acceptable. Phone OTP waits on an SMS vendor. | Q8 |
@@ -68,8 +86,8 @@ Reversible. They are not customer-confirmed. Replace them when the named questio
 | D9 | The owner types the load. No inbox and no OCR. | Q2 |
 | D10 | Owner-supplied reference is the display id. Container number is optional text. No ISO check-digit rule. | Q1 |
 | D11 | Deadline dates may be stored if typed. No warning job until Q18, including empty-return warnings. | Q18 |
-| D12 | `customer_rate_cents` and a receipt’s `amount_cents` may be stored as typed. No default. Nothing multiplies them into pay. | Q4, Q6 |
-| D13 | No pay-rule table and no ledger in this workflow. Review does not create a reimbursement. | Q4, Q5 |
+| D12 | `customer_rate_cents` and a receipt’s `amount_cents` may be stored as typed amounts only. No default. Driver-pay calculations stay disabled. Nothing multiplies them into pay. | Q4, Q6 |
+| D13 | No pay-formula table executes. No `pay_rules` table and no ledger in this workflow. Review does not create a reimbursement. | Q4, Q5 |
 | D14 | Assignment refuses an out-of-service truck, an off driver, a load that is not `created` or `assigned`, and an appointment overlap on the same driver or truck. | Q12 |
 | D15 | Reassign is allowed while status is `assigned`. It is refused after acknowledge. | Q12, Q17 |
 | D16 | UTC in the database. `organizations.display_timezone` is a required IANA name. Business-day filters use that zone. Synthetic tests set the zone in the fixture. Do not hardcode `-07:00`. | Q11 sets the customer’s value |
@@ -93,7 +111,7 @@ Reversible. They are not customer-confirmed. Replace them when the named questio
 | Question | How are drivers paid? Collect three real calculations: inputs, rule in their words, and the amount they actually paid. |
 | Blocks | Any earning formula, “what do I owe each driver?”, treating a load’s typed rate as driver cost |
 | Reversible default? | Yes |
-| Default | D12 and D13. Store typed amounts. Compute nothing. No `$185` / `$95` / `$250` / 27% / hourly default. |
+| Default | D12 and D13. Driver-pay calculations are disabled until the customer confirms this question. Store typed amounts only. No pay-formula table executes. No `$185` / `$95` / `$250` / 27% / hourly default. |
 | Work that proceeds | The full file-and-review workflow, with pay figures shown as not configured |
 
 ### Load handoffs — Open
