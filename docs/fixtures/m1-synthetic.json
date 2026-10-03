@@ -1,0 +1,194 @@
+{
+  "label": "SYNTHETIC",
+  "disclaimer": "Staging fixture only. Not a customer record and not the Westshore pitch seed. payRules and emptyReturnRequired are null because those rules are not customer-confirmed.",
+  "organization": {
+    "name": "Synthetic Staging Carrier",
+    "syntheticOnly": true,
+    "displayTimezone": "America/Los_Angeles",
+    "displayTimezoneNote": "Fixture configuration so business-day tests have an IANA zone. Instants below are UTC. This is not the customer's confirmed zone."
+  },
+  "users": [
+    {
+      "key": "owner",
+      "email": "owner.m1@synthetic.example",
+      "role": "owner",
+      "driverKey": null
+    },
+    {
+      "key": "driverOne",
+      "email": "driver.one@synthetic.example",
+      "role": "driver",
+      "driverKey": "driverOne"
+    },
+    {
+      "key": "driverTwo",
+      "email": "driver.two@synthetic.example",
+      "role": "driver",
+      "driverKey": "driverTwo"
+    }
+  ],
+  "drivers": [
+    {
+      "key": "driverOne",
+      "displayName": "Synthetic Driver One",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driverTwo",
+      "displayName": "Synthetic Driver Two",
+      "availability": "available",
+      "payRule": null
+    },
+    {
+      "key": "driverOff",
+      "displayName": "Synthetic Driver Off",
+      "availability": "off",
+      "availabilityNote": "Fixture off-duty flag",
+      "payRule": null
+    }
+  ],
+  "trucks": [
+    {
+      "key": "truckOk",
+      "unit": "SYN-01",
+      "operational": "in_service"
+    },
+    {
+      "key": "truckDown",
+      "unit": "SYN-02",
+      "operational": "out_of_service"
+    }
+  ],
+  "customer": {
+    "key": "customer",
+    "name": "Synthetic Customer"
+  },
+  "places": [
+    {
+      "key": "pickup",
+      "name": "Synthetic Pickup",
+      "addressLine": "1 Fixture Street"
+    },
+    {
+      "key": "drop",
+      "name": "Synthetic Drop",
+      "addressLine": "2 Fixture Street"
+    }
+  ],
+  "loads": [
+    {
+      "key": "loadOne",
+      "reference": "SYN-LOAD-001",
+      "containerNumber": null,
+      "externalReference": null,
+      "customerKey": "customer",
+      "pickupKey": "pickup",
+      "destinationKey": "drop",
+      "appointmentStart": "2026-10-06T15:00:00Z",
+      "appointmentEnd": "2026-10-06T18:00:00Z",
+      "lastFreeDay": null,
+      "emptyReturnDeadline": null,
+      "cutoff": null,
+      "customerRateCents": null,
+      "notes": ""
+    },
+    {
+      "key": "loadOverlap",
+      "reference": "SYN-LOAD-002",
+      "containerNumber": null,
+      "customerKey": "customer",
+      "pickupKey": "pickup",
+      "destinationKey": "drop",
+      "appointmentStart": "2026-10-06T16:00:00Z",
+      "appointmentEnd": "2026-10-06T19:00:00Z",
+      "customerRateCents": null,
+      "notes": "Overlap case against SYN-LOAD-001. Do not leave both assigned."
+    }
+  ],
+  "payRules": null,
+  "emptyReturnRequired": null,
+  "workflowScript": [
+    {
+      "step": "assign",
+      "loadKey": "loadOne",
+      "driverKey": "driverOne",
+      "truckKey": "truckOk"
+    },
+    {
+      "step": "acknowledge",
+      "as": "driverOne",
+      "loadKey": "loadOne"
+    },
+    {
+      "step": "progress",
+      "as": "driverOne",
+      "loadKey": "loadOne",
+      "note": "At the pickup door.",
+      "reportedStage": null
+    },
+    {
+      "step": "upload",
+      "as": "driverOne",
+      "loadKey": "loadOne",
+      "kind": "receipt",
+      "fileName": "synthetic-receipt.jpg",
+      "mimeType": "image/jpeg",
+      "amountCents": 1234,
+      "amountNote": "Typed test amount. Not a pay rate and not a reimbursement rule."
+    },
+    {
+      "step": "upload",
+      "as": "driverOne",
+      "loadKey": "loadOne",
+      "kind": "pod",
+      "fileName": "synthetic-pod.pdf",
+      "mimeType": "application/pdf",
+      "amountCents": null
+    },
+    {
+      "step": "review",
+      "as": "owner",
+      "kind": "pod",
+      "decision": "approved",
+      "note": ""
+    },
+    {
+      "step": "review",
+      "as": "owner",
+      "kind": "receipt",
+      "decision": "rejected",
+      "note": "Fixture rejection. Must not create a ledger row."
+    }
+  ],
+  "negativeCases": [
+    {
+      "step": "assign",
+      "loadKey": "loadOne",
+      "driverKey": "driverOne",
+      "truckKey": "truckDown",
+      "expectCode": "truck_out_of_service"
+    },
+    {
+      "step": "assign",
+      "loadKey": "loadOne",
+      "driverKey": "driverOff",
+      "truckKey": "truckOk",
+      "expectCode": "driver_unavailable"
+    },
+    {
+      "step": "assign",
+      "loadKey": "loadOverlap",
+      "driverKey": "driverOne",
+      "truckKey": "truckOk",
+      "expectCode": "appointment_overlap",
+      "when": "SYN-LOAD-001 is already assigned or acknowledged for the same driver and truck"
+    },
+    {
+      "step": "getLoad",
+      "as": "driverTwo",
+      "loadKey": "loadOne",
+      "expectCode": "not_found"
+    }
+  ]
+}

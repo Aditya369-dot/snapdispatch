@@ -6,6 +6,8 @@ The owner board and the driver phone share one set of demo records. Assign a loa
 
 There is no login, database, payment processor, or GPS account. Tracking is simulated. Excel sync is simulated.
 
+Production-transition docs, including the first-workflow plan, live in [docs/README.md](docs/README.md). They do not change this prototype.
+
 ## Run it
 
 ```bash
