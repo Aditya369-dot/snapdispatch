@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { sessionSecret } from "@/lib/pilot/auth";
+import { httpsRequest, sessionSecret } from "@/lib/pilot/auth";
 
 export const STAGING_ACCESS_COOKIE = "sd_staging";
 export const STAGING_ACCESS_HEADER = "x-staging-access";
@@ -55,10 +55,10 @@ export function stagingAccessCookieValue(code: string): string {
   return createHmac("sha256", sessionSecret()).update(`sd_staging.${code}`).digest("base64url");
 }
 
-export function stagingAccessCookie(): string {
+export function stagingAccessCookie(request?: Request): string {
   const code = configuredStagingAccessCode();
   if (!code) throw new Error("STAGING_ACCESS_CODE is not set.");
-  const secure = process.env.SNAPDISPATCH_ENV === "staging" || process.env.SNAPDISPATCH_ENV === "production" ? "; Secure" : "";
+  const secure = httpsRequest(request) ? "; Secure" : "";
   return `${STAGING_ACCESS_COOKIE}=${stagingAccessCookieValue(code)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${COOKIE_SECONDS}${secure}`;
 }
 
@@ -111,13 +111,29 @@ export function stagingLockedResponse(): Response {
   );
 }
 
+/** Prefer the browser Host and x-forwarded-* so a bind address like 0.0.0.0 is not the redirect target. */
+export function externalUrl(request: Request, pathname: string, params?: Record<string, string>): URL {
+  const url = new URL(request.url);
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const host = forwardedHost || request.headers.get("host");
+  if (host) url.host = host;
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (proto === "http" || proto === "https") url.protocol = `${proto}:`;
+  const [pathOnly, query = ""] = pathname.split("?");
+  url.pathname = pathOnly || "/";
+  url.search = query ? `?${query}` : "";
+  if (params) {
+    for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  }
+  return url;
+}
+
 /** Null means the request may continue. A Response means the gate blocked it. */
 export function stagingGateResponse(request: Request): Response | null {
   const url = new URL(request.url);
   if (!isStagingGatedPath(url.pathname) || requestGrantsStagingAccess(request)) return null;
   if (url.pathname === "/api/v1" || url.pathname.startsWith("/api/v1/")) return stagingLockedResponse();
-  const redirect = new URL("/staging-access", request.url);
-  redirect.searchParams.set("next", safeAppPath(`${url.pathname}${url.search}`));
+  const redirect = externalUrl(request, "/staging-access", { next: safeAppPath(`${url.pathname}${url.search}`) });
   return Response.redirect(redirect, 307);
 }
 
@@ -127,25 +143,19 @@ export async function stagingUnlockResponse(request: Request): Promise<Response>
   const nextValue = form.get("next");
   const next = safeAppPath(typeof nextValue === "string" ? nextValue : null);
   if (!stagingAccessRequired()) {
-    return Response.redirect(new URL(next, request.url), 303);
+    return Response.redirect(externalUrl(request, next), 303);
   }
   const code = configuredStagingAccessCode();
   if (!code || !equalSecret(submitted.trim(), code)) {
-    const denied = new URL("/staging-access", request.url);
-    denied.searchParams.set("error", "denied");
-    denied.searchParams.set("next", next);
-    return Response.redirect(denied, 303);
+    return Response.redirect(externalUrl(request, "/staging-access", { error: "denied", next }), 303);
   }
   try {
     const headers = new Headers();
-    headers.set("set-cookie", stagingAccessCookie());
-    headers.set("location", new URL(next, request.url).toString());
+    headers.set("set-cookie", stagingAccessCookie(request));
+    headers.set("location", externalUrl(request, next).toString());
     headers.set("cache-control", "no-store");
     return new Response(null, { status: 303, headers });
   } catch {
-    const broken = new URL("/staging-access", request.url);
-    broken.searchParams.set("error", "config");
-    broken.searchParams.set("next", next);
-    return Response.redirect(broken, 303);
+    return Response.redirect(externalUrl(request, "/staging-access", { error: "config", next }), 303);
   }
 }

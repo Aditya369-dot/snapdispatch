@@ -1,5 +1,6 @@
 import { safeAppPath, stagingAccessRequired } from "@/lib/pilot/staging-access";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Staging access · SnapDispatch",
@@ -26,7 +27,7 @@ export default async function StagingAccessPage({
         <p className="mt-1 text-sm text-[#5c6b80]">
           This gate covers <span className="font-medium">/app</span> and <span className="font-medium">/api/v1</span> when{" "}
           <span className="font-medium">SNAPDISPATCH_ENV</span> is staging and <span className="font-medium">STAGING_ACCESS_CODE</span> is
-          set. The public pitch at <a className="underline" href="/">/</a> stays open. After this step, sign in at /app/login with a synthetic
+          set. The public pitch at <Link className="underline" href="/">/</Link> stays open. After this step, sign in at /app/login with a synthetic
           profile. That password is not a Supabase Auth user.
         </p>
         {required ? null : (
@@ -47,9 +48,9 @@ export default async function StagingAccessPage({
           Continue
         </button>
         <p className="mt-4 text-sm">
-          <a className="underline" href="/">
+          <Link className="underline" href="/">
             Public pitch
-          </a>
+          </Link>
         </p>
       </form>
     </div>

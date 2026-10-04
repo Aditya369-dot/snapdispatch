@@ -125,7 +125,7 @@ export async function pilotApi(request: Request): Promise<Response> {
       if (!profileId) throw new PilotError("unauthenticated");
       const token = signSession(profileId);
       const me = await getMe(profileId);
-      return json({ token, ...me }, 200, { "set-cookie": sessionCookie(token) });
+      return json({ token, ...me }, 200, { "set-cookie": sessionCookie(token, request) });
     }
 
     if (method === "DELETE" && path === "/api/v1/session") {

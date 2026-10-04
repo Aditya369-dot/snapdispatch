@@ -110,7 +110,7 @@ Use the Vercel URL from step 2. Use a normal window on the laptop and a private 
 
 1. Open `https://<your-staging-project>.vercel.app/`. The Westshore pitch loads. No access code and no login.
 2. Open `https://<your-staging-project>.vercel.app/app`. The staging gate redirects to `/staging-access`.
-3. Enter `STAGING_ACCESS_CODE`. The browser stores HttpOnly cookie `sd_staging` for 12 hours. It does not store the raw code.
+3. Enter `STAGING_ACCESS_CODE`. The browser stores HttpOnly cookie `sd_staging` for 12 hours. It does not store the raw code. On the HTTPS Vercel host that cookie is also marked Secure.
 4. Sign in at `/app/login`.
    - Owner: `owner.staging@synthetic.example`
    - Password: the `PILOT_FIXTURE_PASSWORD` you stored for the reset job

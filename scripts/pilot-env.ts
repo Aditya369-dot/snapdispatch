@@ -1,2 +1,4 @@
+import { existsSync } from "node:fs";
+
 const envFile = process as NodeJS.Process & { loadEnvFile?: (path?: string) => void };
-envFile.loadEnvFile?.();
+if (existsSync(".env")) envFile.loadEnvFile?.();

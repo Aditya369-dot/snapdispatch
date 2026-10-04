@@ -94,11 +94,18 @@ describe("staging access and fixture password", { concurrency: 1 }, () => {
     process.env.PILOT_SESSION_SECRET = "test-session-secret-value";
     process.env.STAGING_ACCESS_CODE = CODE;
     assert.equal(stagingAccessRequired(), true);
-    assert.match(stagingAccessCookie(), /Secure/);
+    assert.doesNotMatch(stagingAccessCookie(new Request("http://pilot.local/app")), /Secure/);
+    assert.match(stagingAccessCookie(new Request("https://staging.example/app")), /Secure/);
+    assert.match(
+      stagingAccessCookie(new Request("http://staging.example/app", { headers: { "x-forwarded-proto": "https" } })),
+      /Secure/,
+    );
 
-    const locked = stagingGateResponse(new Request("http://pilot.local/app/login"));
+    const locked = stagingGateResponse(
+      new Request("http://0.0.0.0:43123/app/login", { headers: { host: "127.0.0.1:43123" } }),
+    );
     assert.equal(locked?.status, 307);
-    assert.equal(locked?.headers.get("location"), "http://pilot.local/staging-access?next=%2Fapp%2Flogin");
+    assert.equal(locked?.headers.get("location"), "http://127.0.0.1:43123/staging-access?next=%2Fapp%2Flogin");
 
     const apiLocked = stagingGateResponse(new Request("http://pilot.local/api/v1/health"));
     assert.equal(apiLocked?.status, 401);
@@ -122,7 +129,7 @@ describe("staging access and fixture password", { concurrency: 1 }, () => {
     });
     assert.equal(stagingGateResponse(basicRequest), null);
 
-    const cookie = stagingAccessCookie().split(";")[0].slice(`${STAGING_ACCESS_COOKIE}=`.length);
+    const cookie = stagingAccessCookie(new Request("http://pilot.local/app")).split(";")[0].slice(`${STAGING_ACCESS_COOKIE}=`.length);
     const cookieRequest = new Request("http://pilot.local/app/roster", {
       headers: { cookie: `${STAGING_ACCESS_COOKIE}=${cookie}` },
     });
@@ -168,7 +175,16 @@ describe("staging access and fixture password", { concurrency: 1 }, () => {
     assert.equal(opened.headers.get("location"), "http://pilot.local/app");
     assert.match(opened.headers.get("set-cookie") ?? "", new RegExp(`^${STAGING_ACCESS_COOKIE}=`));
     assert.match(opened.headers.get("set-cookie") ?? "", /HttpOnly/);
-    assert.match(opened.headers.get("set-cookie") ?? "", /Secure/);
+    assert.doesNotMatch(opened.headers.get("set-cookie") ?? "", /Secure/);
+
+    const secureUnlock = await stagingUnlockResponse(
+      new Request("https://staging.example/api/staging-access", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ code: CODE, next: "/app" }),
+      }),
+    );
+    assert.match(secureUnlock.headers.get("set-cookie") ?? "", /Secure/);
 
     delete process.env.PILOT_SESSION_SECRET;
     const broken = await stagingUnlockResponse(
