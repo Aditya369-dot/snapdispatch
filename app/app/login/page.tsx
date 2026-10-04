@@ -7,7 +7,7 @@ import { useState } from "react";
 export default function PilotLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("owner.staging@synthetic.example");
-  const [password, setPassword] = useState("synthetic-dev-password");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   async function onSubmit(event: React.FormEvent) {
@@ -29,7 +29,8 @@ export default function PilotLoginPage() {
     <form className="rounded-lg border bg-white p-4" onSubmit={(event) => void onSubmit(event)}>
       <h1 className="text-lg font-semibold">Sign in</h1>
       <p className="mt-1 text-sm text-[#5c6b80]">
-        Separate accounts for the owner, dispatcher, and drivers. This is not the pitch role switcher.
+        Separate accounts for the owner, dispatcher, and drivers. This is not the pitch role switcher. Sign-in checks
+        synthetic profiles and the sd_pilot cookie. It does not create a Supabase Auth user.
       </p>
       <label className="mt-4 block text-sm">
         Email

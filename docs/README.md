@@ -54,7 +54,7 @@ Use that file for the current-state assessment and the keep-or-replace list. Its
 | [api/v1-m1.md](./api/v1-m1.md) | API contract v1 |
 | [schema/m1-draft.sql](./schema/m1-draft.sql) | Draft schema. Not a migration. RLS, migration strategy, indexes, and status enums are unresolved |
 | [schema/m1-migration-notes.md](./schema/m1-migration-notes.md) | What the checkpoint migration applies, and which RLS and auth items stay open |
-| [SETUP.md](./SETUP.md) | Local Postgres or optional Supabase env, reset guard, two-browser walkthrough |
+| [SETUP.md](./SETUP.md) | Hosted Vercel + Supabase staging walkthrough. Password sessions. No local Postgres required |
 | [m1-status.md](./m1-status.md) | Passed checks, and the customer questions this checkpoint does not close |
 | [fixtures/m1-synthetic.md](./fixtures/m1-synthetic.md) | Minimal roster, fleet scale, and second-organization isolation |
 | [fixtures/m1-synthetic.json](./fixtures/m1-synthetic.json) | Minimal synthetic org, people, trucks, and load |

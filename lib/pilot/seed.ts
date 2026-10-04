@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { hashPassword } from "@/lib/pilot/auth";
+import { fixturePassword } from "@/lib/pilot/fixture-password";
 import { withAdmin } from "@/lib/pilot/db";
 import { PilotError } from "@/lib/pilot/errors";
 import type { FixtureDocument, FixtureLoad, FixtureOrg, StagingExtras } from "@/lib/pilot/fixture-types";
@@ -332,7 +333,7 @@ async function insertSeedDocument(
 
 export async function resetSyntheticData(): Promise<void> {
   assertResetAllowed();
-  const password = process.env.PILOT_FIXTURE_PASSWORD || "synthetic-dev-password";
+  const password = fixturePassword();
   const passwordHash = hashPassword(password);
   const orgs = [
     ...(await readOrgFile("m1-synthetic.json")),

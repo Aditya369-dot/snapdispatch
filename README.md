@@ -6,7 +6,7 @@ The owner board and the driver phone share one set of demo records. Assign a loa
 
 There is no login, database, payment processor, or GPS account. Tracking is simulated. Excel sync is simulated.
 
-Production-transition docs, including the first-workflow plan, live in [docs/README.md](docs/README.md). The pitch on `/` is unchanged. A separate technical checkpoint lives at `/app` and is not a live pilot. Setup, synthetic accounts, and the two-browser walkthrough are in [docs/SETUP.md](docs/SETUP.md). Driver-pay calculations stay disabled.
+Production-transition docs, including the first-workflow plan, live in [docs/README.md](docs/README.md). The pitch on `/` is unchanged. A separate technical checkpoint lives at `/app` and is not a live pilot. The hosted walkthrough is a laptop and a phone against a separate Vercel project, with Supabase as Postgres and private Storage. It does not need Postgres on the owner's machine. Setup is in [docs/SETUP.md](docs/SETUP.md). Driver-pay calculations stay disabled.
 
 ## Run it
 

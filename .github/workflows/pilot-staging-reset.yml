@@ -1,0 +1,47 @@
+name: Pilot staging reset
+
+# Manual load of synthetic fixtures into the hosted staging database.
+# Does not run on pull requests. Set the secret names in the repository
+# before dispatching. Do not put secret values in this file.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reset:
+    name: Migrate and reset synthetic staging
+    runs-on: ubuntu-latest
+    env:
+      SNAPDISPATCH_ENV: staging
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PILOT_FIXTURE_PASSWORD: ${{ secrets.PILOT_FIXTURE_PASSWORD }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_STORAGE_BUCKET: load-files
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Require staging secrets
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$PILOT_FIXTURE_PASSWORD"
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Migrate
+        run: npm run pilot:migrate
+
+      - name: Reset synthetic fixtures
+        run: npm run pilot:reset

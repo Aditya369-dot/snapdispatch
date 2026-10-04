@@ -52,8 +52,20 @@ export function readSession(token: string | null | undefined): string | null {
   }
 }
 
-export function sessionCookie(token: string): string {
-  const secure = process.env.SNAPDISPATCH_ENV === "production" ? "; Secure" : "";
+/** True for https URLs and for proxies that set x-forwarded-proto, including Vercel. */
+export function httpsRequest(request?: Request): boolean {
+  if (!request) return false;
+  const forwarded = request.headers.get("x-forwarded-proto");
+  if (forwarded) return forwarded.split(",")[0]?.trim() === "https";
+  try {
+    return new URL(request.url).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+export function sessionCookie(token: string, request?: Request): string {
+  const secure = httpsRequest(request) ? "; Secure" : "";
   return `sd_pilot=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${SESSION_SECONDS}${secure}`;
 }
 

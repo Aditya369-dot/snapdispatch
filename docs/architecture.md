@@ -20,12 +20,12 @@ M1 in [m1-plan.md](./m1-plan.md) is a **technical workflow checkpoint**. It is n
 | --- | --- | --- |
 | Purpose | Sales walkthrough | Staging, then a later trial with real people |
 | Data | Westshore seed in the browser | Postgres. Staging uses the minimal, fleet, and isolation fixtures in [fixtures/m1-synthetic.md](./fixtures/m1-synthetic.md). No real opening balances |
-| Auth | Role switcher in `components/app-frame.tsx` | Real sessions. Role on the server |
+| Auth | Role switcher in `components/app-frame.tsx` | Password sessions on synthetic profiles (`sd_pilot`, `/app/login`). Supabase Auth is not required for staging |
 | Files | IndexedDB `snapdispatch-demo` | Private object storage |
 | Host | `https://snapdispatch.vercel.app/` at the time of the audit | A different project. Customer loads do not go on the pitch host |
 | Money | `lib/finance.ts` demo math | Driver-pay calculations disabled. Typed amounts only. No pay-formula table executes until Q4 and Q5 |
 
-**Proposed.** Vercel for the app and Supabase for Postgres, Auth, and private Storage, if email magic link or password is acceptable (D4). Re-check the audit’s price notes before anyone buys a plan. Phone OTP adds an SMS vendor. The pitch can stay on its current hobby-style deploy because it holds no customer data.
+**Proposed.** Vercel for the app and Supabase for Postgres and private Storage. Staging login is the password session against `profiles`, not a Supabase Auth user. Setting Supabase env vars does not create users. Re-check the audit’s price notes before anyone buys a plan. Phone OTP adds an SMS vendor. The pitch can stay on its current hobby-style deploy because it holds no customer data.
 
 If Supabase is a poor fit after Q8, keep the same Postgres tables and swap the auth provider. The schema draft comments the `auth.users` dependency. The private-bucket requirement stays either way.
 

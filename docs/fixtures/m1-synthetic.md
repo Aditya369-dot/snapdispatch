@@ -2,7 +2,7 @@
 
 Three staging files. None of them is Westshore Drayage, and none of them is the customer. Do not load them into the pitch site or into a database that holds real freight.
 
-The loader must refuse to run unless the target is marked staging and every organization name starts with `Synthetic`.
+The loader refuses `SNAPDISPATCH_ENV=production` and any value other than `development`, `test`, or `staging`. It also refuses an organization that is not synthetic or whose name does not start with `Synthetic`. On staging it refuses an empty fixture password, a password shorter than 16 characters, and the local development default. See [SETUP.md](../SETUP.md).
 
 M1 is a technical workflow checkpoint, not a live pilot. Driver-pay calculations are disabled in every file: `payRules` is `null`, no pay-formula table is represented, and amounts that appear are typed test amounts only. `emptyReturnRequired` is `null`.
 
